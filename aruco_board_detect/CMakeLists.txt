@@ -17,15 +17,22 @@ find_package(catkin REQUIRED COMPONENTS
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
-find_package(OpenCV 3.4 REQUIRED
-            COMPONENTS
-              opencv_core
-              opencv_highgui
+# find_package(OpenCV 3.4 REQUIRED
+            # COMPONENTS
+              # opencv_core
+              # opencv_highgui
             # PATHS /usr/local/src/robot/opencv/build
-            PATHS $ENV{OPENCV_3_4_BUILD_DIR}
-            NO_DEFAULT_PATH
-            CONFIG)
-
+            # PATHS $ENV{OpenCV_DIR}
+            # NO_DEFAULT_PATH
+            # CONFIG)
+find_package(OpenCV 3.2 REQUIRED
+             COMPONENTS
+             opencv_core
+             opencv_highgui
+             opencv_imgcodecs
+             opencv_imgproc
+             opencv_aruco
+             )
 
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed

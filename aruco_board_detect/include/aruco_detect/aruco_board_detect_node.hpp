@@ -13,6 +13,7 @@
 // OpenCV + ArUCO
 #include <opencv2/opencv.hpp>
 #include <opencv2/aruco.hpp>
+#include <opencv2/aruco/dictionary.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
 #include <mutex>
@@ -74,15 +75,39 @@ class ArucoDetectNode
     // also publishes a tf pose with the board pose
     // optionally shows a debug image
 
-    CameraParameters cam_params_;
+    ros::NodeHandle nh_;
+
+    std::unique_ptr<CameraParameters> cam_params_;
 
     std::unique_ptr<ImageConverter> img_converter_;
 
     ros::Subscriber cam_info_sub_;
 
-    cv::Ptr<cv::Mat> input_img_;
+    ros::Publisher board_pose_pub_;
 
-    cv::Ptr<cv::aruco::Board> aruco_board_;
+    ros::Timer timer_;
+    float time_between_callbacks_;
+
+    cv::Mat input_img_;
+    cv::Mat output_img_;
+
+    std::string debug_window_name_;
+
+    struct ArucoBoardDescription
+    {
+        int n_markers_x_;
+        int n_markers_y_;
+        float marker_size_;
+        float marker_stride_;
+        int dict_type_;
+    };
+
+    ArucoBoardDescription board_description_;
+    cv::Ptr<cv::aruco::Dictionary> aruco_dict_;
+    cv::Ptr<cv::aruco::GridBoard> aruco_board_;
+
+
+
 
 
 
@@ -94,6 +119,8 @@ public:
     ArucoDetectNode(ros::NodeHandle& nh);
 
     void cameraParamsAcquisitionCallback(const sensor_msgs::CameraInfo& cam_info_msg);
+
+    void boardDetectionTimedCallback(const ros::TimerEvent&);
 
 
 };
