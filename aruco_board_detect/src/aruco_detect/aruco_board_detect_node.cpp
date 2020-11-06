@@ -185,7 +185,8 @@ void ArucoDetectNode::boardDetectionTimedCallback(const ros::TimerEvent&)
     std::vector<std::vector<cv::Point2f>> marker_corners;
     img_converter_->getCurrentImage(input_img_);
     cv::aruco::detectMarkers(input_img_, aruco_dict_, marker_corners, marker_ids);
-    cv::Vec3d board_rotation, board_position;
+    // cv::Vec3d board_rotation, board_position;
+    cv::Mat board_rotation, board_position;
 
     // Compute board pose if at least one marker is detected
     if (marker_ids.size() > 0)
@@ -214,9 +215,13 @@ void ArucoDetectNode::boardDetectionTimedCallback(const ros::TimerEvent&)
             geometry_msgs::PoseStamped board_pose;
             board_pose.header.stamp = ros::Time::now();
             board_pose.header.frame_id = "world";
-            board_pose.pose.position.x = board_position[0];
-            board_pose.pose.position.y = board_position[1];
-            board_pose.pose.position.z = board_position[2];
+            // board_pose.pose.position.x = board_position[0];
+            // board_pose.pose.position.y = board_position[1];
+            // board_pose.pose.position.z = board_position[2];
+            board_pose.pose.position.x = board_position.at<double>(1);
+            board_pose.pose.position.y = board_position.at<double>(2);
+            board_pose.pose.position.z = board_position.at<double>(3);
+
 
             cv::Mat rot_mat(3, 3, cv::DataType<float>::type);
             cv::Rodrigues(board_rotation, rot_mat);
