@@ -16,7 +16,7 @@
 #include <opencv2/highgui/highgui.hpp>
 
 #include <mutex>
-
+#include <memory>
 
 class ImageConverter
 {
@@ -44,25 +44,57 @@ public:
 
 };
 
-
-class ArucoBoardDetector
+class CameraParameters
 {
-    // this class is fed images and computes the pose of the board once in a while
+    // this class is supposed to hold camera parameters from a cameraInfo msg
+
+    cv::Mat camera_matrix_;
+    cv::Mat distortion_coeffs_;
+    cv::Size image_size_;
+
+    bool camera_info_stored_;
+
+public:
+
+    CameraParameters();
+
+    cv::Mat getCameraMatrix();
+    cv::Mat getDistortionCoeffs();
+    cv::Size getImageSize();
+
+    bool isCamInfoStored();
+
+    void setCameraParameters(const sensor_msgs::CameraInfo& cam_info_msg);
 
 };
 
 class ArucoDetectNode
 {
-    // this class has an image converter and a board detector inside, sets up callbacks and calls the board detector once in a while
+    // this class has an image converter sets up callbacks and calls the board detector once in a while
     // also publishes a tf pose with the board pose
+    // optionally shows a debug image
+
+    CameraParameters cam_params_;
+
+    std::unique_ptr<ImageConverter> img_converter_;
+
+    ros::Subscriber cam_info_sub_;
+
+    cv::Ptr<cv::Mat> input_img_;
+
+    cv::Ptr<cv::aruco::Board> aruco_board_;
+
+
+
+
+
+
+public:
+
+    ArucoDetectNode(ros::NodeHandle& nh);
+
+    void cameraParamsAcquisitionCallback(const sensor_msgs::CameraInfo& cam_info_msg);
 
 
 };
 
-
-namespace aruco_board_detect
-{
-
-    void imageCallback(const sensor_msgs::ImageConstPtr& msg);
-
-}
