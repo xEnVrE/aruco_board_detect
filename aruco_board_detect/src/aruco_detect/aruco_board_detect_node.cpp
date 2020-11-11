@@ -48,8 +48,6 @@ void ImageConverter::imageAcquisitionCallback(const sensor_msgs::ImageConstPtr& 
     {
         current_img_ptr_ = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::BGR8);
 
-        cv::imshow(debug_window_name_, current_img_ptr_->image);
-        cv::waitKey(3);
     }
     catch (cv_bridge::Exception& exc)
     {
@@ -57,6 +55,9 @@ void ImageConverter::imageAcquisitionCallback(const sensor_msgs::ImageConstPtr& 
     }
 
     image_mutex_.unlock();
+
+    cv::imshow(debug_window_name_, current_img_ptr_->image);
+    cv::waitKey(3);
 
     return;
 
@@ -126,9 +127,11 @@ ArucoDetectNode::ArucoDetectNode(ros::NodeHandle& nh) : nh_(nh), time_between_ca
     img_converter_ = std::unique_ptr<ImageConverter>(new ImageConverter(nh_));
     // img_converter_ = std::make_unique<ImageConverter>(nh);
 
+    cam_params_ = std::unique_ptr<CameraParameters>(new CameraParameters());
+
     cam_info_sub_ = nh_.subscribe("/camera/color/camera_info", 1, &ArucoDetectNode::cameraParamsAcquisitionCallback, this);
 
-    board_pose_pub_ = nh_.advertise<geometry_msgs::PoseStamped>("/board_pose", 1);
+    board_pose_pub_ = nh_.advertise<geometry_msgs::PoseStamped>("board_pose", 1);
 
     // Set up the timer
     // #TODO source time between callbacks from param server
@@ -232,13 +235,13 @@ void ArucoDetectNode::boardDetectionTimedCallback(const ros::TimerEvent&)
 
             geometry_msgs::PoseStamped board_pose;
             board_pose.header.stamp = ros::Time::now();
-            board_pose.header.frame_id = "world";
+            board_pose.header.frame_id = "camera_link";
             // board_pose.pose.position.x = board_position[0];
             // board_pose.pose.position.y = board_position[1];
             // board_pose.pose.position.z = board_position[2];
-            board_pose.pose.position.x = board_position.at<double>(1);
-            board_pose.pose.position.y = board_position.at<double>(2);
-            board_pose.pose.position.z = board_position.at<double>(3);
+            board_pose.pose.position.x = board_position.at<double>(0);
+            board_pose.pose.position.y = board_position.at<double>(1);
+            board_pose.pose.position.z = board_position.at<double>(2);
 
 
             cv::Mat rot_mat(3, 3, cv::DataType<float>::type);
@@ -273,7 +276,7 @@ void sigIntHandler(int sig)
 int main(int argc, char** argv)
 {
     ros::init(argc, argv, "aruco_board_detect_node", ros::init_options::NoSigintHandler);
-    ros::NodeHandle nh;
+    ros::NodeHandle nh("aruco_board_detect");
 
     // ImageConverter image_converter(nh);
     ArucoDetectNode board_detect_node(nh);
