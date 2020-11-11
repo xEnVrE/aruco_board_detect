@@ -19,9 +19,14 @@
 #include <mutex>
 #include <memory>
 
+
+/**
+ * @brief This class is supposed to catch all camera images
+ * from a topic and store them internally.
+ *
+ */
 class ImageConverter
 {
-    // this class is supposed to catch all camera images and store them locally
 
     image_transport::ImageTransport it_;
     image_transport::Subscriber image_sub_;
@@ -35,19 +40,38 @@ class ImageConverter
 
 public:
 
+    /**
+     * @brief Construct a new Image Converter object
+     *
+     * @param nh ROS node handle. Necessary to subscribe to the input image topic
+     */
     ImageConverter(ros::NodeHandle& nh);
 
     ~ImageConverter();
 
+    /**
+     * @brief Get the last image stored
+     *
+     * @param cv_image The stored image will be copied to this reference
+     */
     void getCurrentImage(cv::Mat& cv_image);
 
+    /**
+     * @brief Callback to be executed whenever an image is published on the input topic
+     *
+     * @param msg Pointer to the image message
+     */
     void imageAcquisitionCallback(const sensor_msgs::ImageConstPtr& msg);
 
 };
 
+/**
+ * @brief Class to hold camera intrinsic parameters. Parameters will be parsed
+ * from a CameraInfo message
+ *
+ */
 class CameraParameters
 {
-    // this class is supposed to hold camera parameters from a cameraInfo msg
 
     cv::Mat camera_matrix_;
     cv::Mat distortion_coeffs_;
@@ -63,17 +87,32 @@ public:
     cv::Mat getDistortionCoeffs();
     cv::Size getImageSize();
 
+    /**
+     * @brief Whether the camera info has already been parsed or not
+     *
+     * @return true if the info is available
+     * @return false otherwise
+     */
     bool isCamInfoStored();
 
+    /**
+     * @brief Parse the camera parameters
+     *
+     * @param cam_info_msg ROS message containing the camera info to parse
+     */
     void setCameraParameters(const sensor_msgs::CameraInfo& cam_info_msg);
 
 };
 
+
+/**
+ * @brief Class to perform aruco board detection from camera images. It sets up
+ * the proper callbacks and call the board detector once in a while.
+ * Publishes the pose as a tf transform and on a PoseStamped topic.
+ *
+ */
 class ArucoDetectNode
 {
-    // this class has an image converter sets up callbacks and calls the board detector once in a while
-    // also publishes a tf pose with the board pose
-    // optionally shows a debug image
 
     ros::NodeHandle nh_;
 
@@ -105,13 +144,6 @@ class ArucoDetectNode
     ArucoBoardDescription board_description_;
     cv::Ptr<cv::aruco::Dictionary> aruco_dict_;
     cv::Ptr<cv::aruco::GridBoard> aruco_board_;
-
-
-
-
-
-
-
 
 
 public:
