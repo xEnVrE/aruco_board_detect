@@ -53,8 +53,10 @@ public:
      * @brief Get the last image stored
      *
      * @param cv_image The stored image will be copied to this reference
+     * @return true if an image is present
+     * @return false if no image has been stored yet
      */
-    void getCurrentImage(cv::Mat& cv_image);
+    bool getCurrentImage(cv::Mat& cv_image);
 
     /**
      * @brief Callback to be executed whenever an image is published on the input topic

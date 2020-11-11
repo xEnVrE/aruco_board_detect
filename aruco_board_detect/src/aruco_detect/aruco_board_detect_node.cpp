@@ -2,7 +2,7 @@
 #include <ros/ros.h>
 #include <signal.h>
 
-#include "aruco_detect/aruco_board_detect_node.hpp"
+#include "aruco_detect/aruco_board_detect_node.h"
 
 ImageConverter::ImageConverter(ros::NodeHandle& nh) : it_(nh)
 {
@@ -20,17 +20,22 @@ ImageConverter::~ImageConverter()
     cv::destroyWindow(debug_window_name_);
 }
 
-void ImageConverter::getCurrentImage(cv::Mat& cv_image)
+bool ImageConverter::getCurrentImage(cv::Mat& cv_image)
 {
-    // Assign the image field of the current cv_bridge::cvImage
 
     image_mutex_.lock();
 
-    cv_image = current_img_ptr_->image;
-
-    image_mutex_.unlock();
-
-    return;
+    if (current_img_ptr_ == nullptr)
+    {
+        image_mutex_.unlock();
+        return false;
+    }
+    else
+    {
+        cv_image = current_img_ptr_->image;
+        image_mutex_.unlock();
+        return true;
+    }
 }
 
 void ImageConverter::imageAcquisitionCallback(const sensor_msgs::ImageConstPtr& msg)
@@ -176,14 +181,27 @@ void ArucoDetectNode::cameraParamsAcquisitionCallback(const sensor_msgs::CameraI
 
 void ArucoDetectNode::boardDetectionTimedCallback(const ros::TimerEvent&)
 {
+
+    // Node not ready yet: camera parameters have not been parsed
+    if (!cam_params_->isCamInfoStored())
+    {
+        ROS_INFO_STREAM("Camera info has not been parsed yet");
+        return;
+    }
+
+    if (!img_converter_->getCurrentImage(input_img_))
+    {
+        ROS_INFO_STREAM("No image has been acquired yet");
+        return;
+    }
+
     // Detect markers, compute board pose and publish transform on tf
 
     ROS_INFO_STREAM("Detecting board pose at time " << ros::Time::now().sec);
 
-
     std::vector<int> marker_ids;
     std::vector<std::vector<cv::Point2f>> marker_corners;
-    img_converter_->getCurrentImage(input_img_);
+
     cv::aruco::detectMarkers(input_img_, aruco_dict_, marker_corners, marker_ids);
     // cv::Vec3d board_rotation, board_position;
     cv::Mat board_rotation, board_position;
