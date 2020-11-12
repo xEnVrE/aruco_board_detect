@@ -1,0 +1,23 @@
+<launch>
+
+    <!-- Change these args defaults by cmd line -->
+
+    <arg name="node_name"           default="aruco_board_detector" />
+    <arg name="camera_info_topic"   default="/camera/color/camera_info" />
+    <arg name="camera_image_topic"  default="/camera/color/image_raw" />
+    <arg name="config_file"         default="$(find aruco_board_detect)/cfg/board_config.yaml" />
+    <arg name="detection_rate"      default="1.0" />
+    <arg name="show_debug_img"      default="false" />
+
+    <!-- Not these -->
+
+    <remap from="$(arg node_name)/input/camera_info" to="$(arg camera_info_topic)" />
+    <remap from="$(arg node_name)/input/image_raw" to="$(arg camera_image_topic)" />
+    <node name="aruco_board_detector" pkg="aruco_board_detect" type="aruco_board_detect_node" output="screen" >
+        <!-- node parameters -->
+        <rosparam file="$(arg config_file)" />
+        <param name="detection_rate"           value="$(arg detection_rate)" />
+        <param name="debug_img"                value="$(arg show_debug_img)" />
+    </node>
+
+</launch>

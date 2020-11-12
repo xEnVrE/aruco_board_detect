@@ -4,20 +4,23 @@
 
 #include "aruco_detect/aruco_board_detect_node.h"
 
-ImageConverter::ImageConverter(ros::NodeHandle& nh) : it_(nh)
+ImageConverter::ImageConverter(ros::NodeHandle& nh, bool show_debug_img) : it_(nh), show_debug_window_(show_debug_img)
 {
     // Subscribe to the camera image topic
 
-    image_sub_ = it_.subscribe("/input/image_raw", 1, &ImageConverter::imageAcquisitionCallback, this);
+    image_sub_ = it_.subscribe("input/image_raw", 1, &ImageConverter::imageAcquisitionCallback, this);
 
     debug_window_name_ = "Input camera image";
-    cv::namedWindow(debug_window_name_);
+
+    if (show_debug_window_)
+        cv::namedWindow(debug_window_name_);
 
 }
 
 ImageConverter::~ImageConverter()
 {
-    cv::destroyWindow(debug_window_name_);
+    if (show_debug_window_)
+        cv::destroyWindow(debug_window_name_);
 }
 
 bool ImageConverter::getCurrentImage(cv::Mat& cv_image)
@@ -56,8 +59,11 @@ void ImageConverter::imageAcquisitionCallback(const sensor_msgs::ImageConstPtr& 
 
     image_mutex_.unlock();
 
-    cv::imshow(debug_window_name_, current_img_ptr_->image);
-    cv::waitKey(3);
+    if (show_debug_window_)
+    {
+        cv::imshow(debug_window_name_, current_img_ptr_->image);
+        cv::waitKey(3);
+    }
 
     return;
 
@@ -135,7 +141,15 @@ std::string CameraParameters::getCameraFrameId()
 ArucoDetectNode::ArucoDetectNode(ros::NodeHandle& nh) : nh_(nh), time_between_callbacks_(0.2), it_(nh)
 {
 
-    img_converter_ = std::unique_ptr<ImageConverter>(new ImageConverter(nh_));
+    // Set up whether we want the debug images to show
+
+    debug_window_name_ = "Board camera image";
+
+    nh.param<bool>("debug_img", show_debug_windows_, false);
+    if (show_debug_windows_)
+        cv::namedWindow(debug_window_name_);
+
+    img_converter_ = std::unique_ptr<ImageConverter>(new ImageConverter(nh_, show_debug_windows_));
     // img_converter_ = std::make_unique<ImageConverter>(nh);
 
     // Publish output images
@@ -143,21 +157,22 @@ ArucoDetectNode::ArucoDetectNode(ros::NodeHandle& nh) : nh_(nh), time_between_ca
 
     cam_params_ = std::unique_ptr<CameraParameters>(new CameraParameters());
 
-    cam_info_sub_ = nh_.subscribe("/input/camera_info", 1, &ArucoDetectNode::cameraParamsAcquisitionCallback, this);
+    cam_info_sub_ = nh_.subscribe("input/camera_info", 1, &ArucoDetectNode::cameraParamsAcquisitionCallback, this);
 
     board_pose_pub_ = nh_.advertise<geometry_msgs::PoseStamped>("board_pose", 1);
 
     // Set up the timer
-    // #TODO source time between callbacks from param server
+
+    nh.param<float>("detection_rate", time_between_callbacks_, 1.0);
     timer_ = nh_.createTimer(ros::Duration(time_between_callbacks_), &ArucoDetectNode::boardDetectionTimedCallback, this);
 
     // Set up the board
-    // Hardcoded type for now, will get sourced from param server later #TODO
-    board_description_.n_markers_x_ = 7;
-    board_description_.n_markers_y_ = 5;
-    board_description_.marker_size_ = 0.057;
-    board_description_.marker_stride_ = 0.02;
-    board_description_.dict_type_ = cv::aruco::DICT_4X4_50;
+
+    nh.param<int>("number_markers_x", board_description_.n_markers_x_, 7);
+    nh.param<int>("number_markers_y", board_description_.n_markers_y_, 5);
+    nh.param<float>("marker_edge_size", board_description_.marker_size_, 0.057);
+    nh.param<float>("marker_stride", board_description_.marker_stride_, 0.02);
+    nh.param<int>("dictionary_type", board_description_.dict_type_, cv::aruco::DICT_4X4_50);
 
     aruco_dict_ = cv::aruco::getPredefinedDictionary(board_description_.dict_type_);
     aruco_board_ = cv::aruco::GridBoard::create(board_description_.n_markers_x_,
@@ -165,9 +180,6 @@ ArucoDetectNode::ArucoDetectNode(ros::NodeHandle& nh) : nh_(nh), time_between_ca
                                                 board_description_.marker_size_,
                                                 board_description_.marker_stride_,
                                                 aruco_dict_);
-
-    debug_window_name_ = "Board camera image";
-    cv::namedWindow(debug_window_name_);
 
 }
 
@@ -251,9 +263,11 @@ void ArucoDetectNode::boardDetectionTimedCallback(const ros::TimerEvent&)
 
             // Show the output image
 
-            cv::imshow(debug_window_name_, output_img_);
-            cv::waitKey(3);
-
+            if (show_debug_windows_)
+            {
+                cv::imshow(debug_window_name_, output_img_);
+                cv::waitKey(3);
+            }
             // Send the output image
 
             sensor_msgs::ImagePtr image_msg = cv_bridge::CvImage(std_msgs::Header(),
@@ -310,9 +324,6 @@ void ArucoDetectNode::boardDetectionTimedCallback(const ros::TimerEvent&)
 
         }
     }
-
-
-
 }
 
 void sigIntHandler(int sig)
@@ -325,8 +336,8 @@ void sigIntHandler(int sig)
 
 int main(int argc, char** argv)
 {
-    ros::init(argc, argv, "aruco_board_detect_node", ros::init_options::NoSigintHandler);
-    ros::NodeHandle nh("aruco_board_detect");
+    ros::init(argc, argv, "aruco_board_detector", ros::init_options::NoSigintHandler);
+    ros::NodeHandle nh("~");
 
     // ImageConverter image_converter(nh);
     ArucoDetectNode board_detect_node(nh);

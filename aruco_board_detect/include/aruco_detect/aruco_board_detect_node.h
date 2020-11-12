@@ -35,6 +35,7 @@ class ImageConverter
 
     std::mutex image_mutex_;
 
+    bool show_debug_window_;
     std::string debug_window_name_;
 
 public:
@@ -43,8 +44,9 @@ public:
      * @brief Construct a new Image Converter object
      *
      * @param nh ROS node handle. Necessary to subscribe to the input image topic
+     * @param show_debug_img Whether to show the received images in a CV window
      */
-    ImageConverter(ros::NodeHandle& nh);
+    ImageConverter(ros::NodeHandle& nh, bool show_debug_img);
 
     ~ImageConverter();
 
@@ -141,6 +143,7 @@ class ArucoDetectNode
     cv::Mat output_img_;
 
     std::string debug_window_name_;
+    bool show_debug_windows_;
 
     struct ArucoBoardDescription
     {
