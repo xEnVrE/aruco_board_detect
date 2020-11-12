@@ -8,7 +8,7 @@ ImageConverter::ImageConverter(ros::NodeHandle& nh) : it_(nh)
 {
     // Subscribe to the camera image topic
 
-    image_sub_ = it_.subscribe("/camera/color/image_raw", 1, &ImageConverter::imageAcquisitionCallback, this);
+    image_sub_ = it_.subscribe("/input/image_raw", 1, &ImageConverter::imageAcquisitionCallback, this);
 
     debug_window_name_ = "Input camera image";
     cv::namedWindow(debug_window_name_);
@@ -94,8 +94,14 @@ void CameraParameters::setCameraParameters(const sensor_msgs::CameraInfo& cam_in
         ROS_WARN("Distortion model %s not supported, assuming zero distortion.", cam_info_msg.distortion_model.c_str());
     }
 
+    // Set image size
+
     image_size_.height = cam_info_msg.height;
     image_size_.width = cam_info_msg.width;
+
+    // Set the frame_id the image is rooted on
+
+    camera_frame_id_ = static_cast<std::string>(cam_info_msg.header.frame_id);
 
     camera_info_stored_ = true;
 
@@ -121,15 +127,23 @@ bool CameraParameters::isCamInfoStored()
     return camera_info_stored_;
 }
 
-ArucoDetectNode::ArucoDetectNode(ros::NodeHandle& nh) : nh_(nh), time_between_callbacks_(0.2)
+std::string CameraParameters::getCameraFrameId()
+{
+    return camera_frame_id_;
+}
+
+ArucoDetectNode::ArucoDetectNode(ros::NodeHandle& nh) : nh_(nh), time_between_callbacks_(0.2), it_(nh)
 {
 
     img_converter_ = std::unique_ptr<ImageConverter>(new ImageConverter(nh_));
     // img_converter_ = std::make_unique<ImageConverter>(nh);
 
+    // Publish output images
+    output_image_pub_ = it_.advertise("debug_image", 1);
+
     cam_params_ = std::unique_ptr<CameraParameters>(new CameraParameters());
 
-    cam_info_sub_ = nh_.subscribe("/camera/color/camera_info", 1, &ArucoDetectNode::cameraParamsAcquisitionCallback, this);
+    cam_info_sub_ = nh_.subscribe("/input/camera_info", 1, &ArucoDetectNode::cameraParamsAcquisitionCallback, this);
 
     board_pose_pub_ = nh_.advertise<geometry_msgs::PoseStamped>("board_pose", 1);
 
@@ -206,7 +220,12 @@ void ArucoDetectNode::boardDetectionTimedCallback(const ros::TimerEvent&)
     std::vector<std::vector<cv::Point2f>> marker_corners;
 
     cv::aruco::detectMarkers(input_img_, aruco_dict_, marker_corners, marker_ids);
+
+    // Using Vec3d causes the estimatePoseBoard method to use them as initial guess in opencv3.2
+    // resulting in random estimation
+    // Therefore use cv::Mat
     // cv::Vec3d board_rotation, board_position;
+
     cv::Mat board_rotation, board_position;
 
     // Compute board pose if at least one marker is detected
@@ -216,6 +235,8 @@ void ArucoDetectNode::boardDetectionTimedCallback(const ros::TimerEvent&)
         cv::aruco::drawDetectedMarkers(output_img_, marker_corners, marker_ids);
 
         // Attempt to estimate board pose, and if successful draw origin and axes
+        // rotation and position are both assumed to be arrays of 3 numbers
+
         int board_estimation_outcome = cv::aruco::estimatePoseBoard(marker_corners, marker_ids, aruco_board_,
                                          cam_params_->getCameraMatrix(),
                                          cam_params_->getDistortionCoeffs(),
@@ -228,35 +249,64 @@ void ArucoDetectNode::boardDetectionTimedCallback(const ros::TimerEvent&)
                                 cam_params_->getDistortionCoeffs(),
                                 board_rotation, board_position, 0.05);
 
+            // Show the output image
+
             cv::imshow(debug_window_name_, output_img_);
             cv::waitKey(3);
+
+            // Send the output image
+
+            sensor_msgs::ImagePtr image_msg = cv_bridge::CvImage(std_msgs::Header(),
+                                                        "bgr8", output_img_).toImageMsg();
+            image_msg->header.frame_id = cam_params_->getCameraFrameId();
+            output_image_pub_.publish(image_msg);
+
+            // std::cout << "Board_position: " << std::endl << board_position << std::endl;
+            // std::cout << "Board_rotation: " << std::endl << board_rotation << std::endl;
+
+            // Obtain a proper rotation matrix from rotation vector
+
+            cv::Mat rot_mat(3, 3, cv::DataType<float>::type);
+            cv::Rodrigues(board_rotation, rot_mat);
+
+            // ROS messages need the rotation in quaternion form
+
+            tf::Matrix3x3 rot_mat_tf(rot_mat.at<double>(0,0), rot_mat.at<double>(0,1), rot_mat.at<double>(0,2),
+                                       rot_mat.at<double>(1,0), rot_mat.at<double>(1,1), rot_mat.at<double>(1,2),
+                                       rot_mat.at<double>(2,0), rot_mat.at<double>(2,1), rot_mat.at<double>(2,2));
+            tf::Quaternion quat_tf;
+            rot_mat_tf.getRotation(quat_tf);
 
             // Send board pose on topic
 
             geometry_msgs::PoseStamped board_pose;
             board_pose.header.stamp = ros::Time::now();
-            board_pose.header.frame_id = "camera_link";
+            board_pose.header.frame_id = cam_params_->getCameraFrameId();
             // board_pose.pose.position.x = board_position[0];
             // board_pose.pose.position.y = board_position[1];
             // board_pose.pose.position.z = board_position[2];
             board_pose.pose.position.x = board_position.at<double>(0);
             board_pose.pose.position.y = board_position.at<double>(1);
             board_pose.pose.position.z = board_position.at<double>(2);
-
-
-            cv::Mat rot_mat(3, 3, cv::DataType<float>::type);
-            cv::Rodrigues(board_rotation, rot_mat);
-            tf::Matrix3x3 rot_mat_tf(rot_mat.at<double>(0,0), rot_mat.at<double>(0,1), rot_mat.at<double>(0,2),
-                                       rot_mat.at<double>(1,0), rot_mat.at<double>(1,1), rot_mat.at<double>(1,2),
-                                       rot_mat.at<double>(2,0), rot_mat.at<double>(2,1), rot_mat.at<double>(2,2));
-            tf::Quaternion quat_tf;
-            rot_mat_tf.getRotation(quat_tf);
             board_pose.pose.orientation.x = quat_tf.getX();
             board_pose.pose.orientation.y = quat_tf.getY();
             board_pose.pose.orientation.z = quat_tf.getZ();
             board_pose.pose.orientation.w = quat_tf.getW();
 
             board_pose_pub_.publish(board_pose);
+
+            // Broadcast the TF transform of the board wrt the camera frame id
+
+            tf::Transform board_transform;
+            board_transform.setRotation(quat_tf);
+            board_transform.setOrigin(tf::Vector3(board_position.at<double>(0),
+                                                  board_position.at<double>(1),
+                                                  board_position.at<double>(2)));
+            tf::StampedTransform board_stamped_transform(board_transform,
+                                                         ros::Time::now(),
+                                                         cam_params_->getCameraFrameId(),
+                                                         "aruco_board");
+            board_transform_bc_.sendTransform(board_stamped_transform);
 
         }
     }

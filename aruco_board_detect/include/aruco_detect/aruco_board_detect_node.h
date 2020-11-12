@@ -1,5 +1,3 @@
-#pragma once
-
 // ROS
 #include <ros/ros.h>
 #include <tf/transform_broadcaster.h>
@@ -9,6 +7,7 @@
 #include <cv_bridge/cv_bridge.h>
 #include <image_transport/image_transport.h>
 #include <sensor_msgs/image_encodings.h>
+#include <tf/transform_broadcaster.h>
 
 // OpenCV + ArUCO
 #include <opencv2/opencv.hpp>
@@ -79,6 +78,8 @@ class CameraParameters
     cv::Mat distortion_coeffs_;
     cv::Size image_size_;
 
+    std::string camera_frame_id_;
+
     bool camera_info_stored_;
 
 public:
@@ -88,6 +89,7 @@ public:
     cv::Mat getCameraMatrix();
     cv::Mat getDistortionCoeffs();
     cv::Size getImageSize();
+    std::string getCameraFrameId();
 
     /**
      * @brief Whether the camera info has already been parsed or not
@@ -118,6 +120,8 @@ class ArucoDetectNode
 
     ros::NodeHandle nh_;
 
+    image_transport::ImageTransport it_;
+
     std::unique_ptr<CameraParameters> cam_params_;
 
     std::unique_ptr<ImageConverter> img_converter_;
@@ -125,6 +129,10 @@ class ArucoDetectNode
     ros::Subscriber cam_info_sub_;
 
     ros::Publisher board_pose_pub_;
+
+    image_transport::Publisher output_image_pub_;
+
+    tf::TransformBroadcaster board_transform_bc_;
 
     ros::Timer timer_;
     float time_between_callbacks_;
