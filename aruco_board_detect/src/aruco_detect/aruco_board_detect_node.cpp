@@ -183,6 +183,15 @@ ArucoDetectNode::ArucoDetectNode(ros::NodeHandle& nh) : nh_(nh), time_between_ca
 
 }
 
+ArucoDetectNode::~ArucoDetectNode()
+{
+    // If debug was active, kill the window
+
+    if (show_debug_windows_)
+        cv::destroyWindow(debug_window_name_);
+
+}
+
 void ArucoDetectNode::cameraParamsAcquisitionCallback(const sensor_msgs::CameraInfo& cam_info_msg)
 {
     // Set the object fields
@@ -321,6 +330,18 @@ void ArucoDetectNode::boardDetectionTimedCallback(const ros::TimerEvent&)
                                                          cam_params_->getCameraFrameId(),
                                                          "aruco_board");
             board_transform_bc_.sendTransform(board_stamped_transform);
+
+            // Compute and broadcast the GRASPA board ref frame
+            // Basically move the aruco board ref frame along the x axis
+
+            tf::Transform board_graspa_transform;
+            board_graspa_transform.setIdentity();
+            board_graspa_transform.setOrigin(tf::Vector3(static_cast<double>(board_description_.n_markers_x_ * board_description_.marker_size_ + (board_description_.n_markers_x_ - 1) * board_description_.marker_stride_), 0.0, 0.0));
+            tf::StampedTransform board_graspa_stamped_transform(board_graspa_transform,
+                                                                ros::Time::now(),
+                                                                "aruco_board",
+                                                                "graspa_board");
+            board_transform_bc_.sendTransform(board_graspa_stamped_transform);
 
         }
     }

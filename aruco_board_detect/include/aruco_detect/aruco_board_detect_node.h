@@ -163,10 +163,11 @@ public:
 
     ArucoDetectNode(ros::NodeHandle& nh);
 
+    ~ArucoDetectNode();
+
     void cameraParamsAcquisitionCallback(const sensor_msgs::CameraInfo& cam_info_msg);
 
     void boardDetectionTimedCallback(const ros::TimerEvent&);
-
 
 };
 
