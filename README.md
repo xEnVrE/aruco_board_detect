@@ -18,10 +18,7 @@ vision_opencv (melodic)
 
 
 #TODO list
-fix pragma with ifdef statement
-minimal documentation for classes/methods
-fix segfault when image is not ready
 write launchfile and remap topics
-stream pose on both tf and out topic
-send output image on output debug topic
+make debug windows optional with cmd argument
+broadcast tf transform of the bottom right corner of the board too
 
