@@ -17,8 +17,5 @@ vision_opencv (melodic)
 ```
 
 
-#TODO list
-write launchfile and remap topics
-make debug windows optional with cmd argument
-broadcast tf transform of the bottom right corner of the board too
+#TODO write simple tutorial
 
