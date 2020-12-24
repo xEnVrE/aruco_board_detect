@@ -149,10 +149,15 @@ ArucoDetectNode::ArucoDetectNode(ros::NodeHandle& nh) : nh_(nh), time_between_ca
     if (show_debug_windows_)
         cv::namedWindow(debug_window_name_);
 
+    // Set up whether we want to detect and publish single marker poses
+
+    nh.param<bool>("detect_single_markers", detect_single_markers_, false);
+
     img_converter_ = std::unique_ptr<ImageConverter>(new ImageConverter(nh_, show_debug_windows_));
     // img_converter_ = std::make_unique<ImageConverter>(nh);
 
     // Publish output images
+
     output_image_pub_ = it_.advertise("debug_image", 1);
 
     cam_params_ = std::unique_ptr<CameraParameters>(new CameraParameters());
@@ -160,6 +165,9 @@ ArucoDetectNode::ArucoDetectNode(ros::NodeHandle& nh) : nh_(nh), time_between_ca
     cam_info_sub_ = nh_.subscribe("input/camera_info", 1, &ArucoDetectNode::cameraParamsAcquisitionCallback, this);
 
     board_pose_pub_ = nh_.advertise<geometry_msgs::PoseStamped>("board_pose", 1);
+
+    if (detect_single_markers_)
+        markers_data_pub_ = nh_.advertise<aruco_board_detect::MarkerList>("markers_data", 1);
 
     // Set up the timer
 
@@ -342,6 +350,70 @@ void ArucoDetectNode::boardDetectionTimedCallback(const ros::TimerEvent&)
                                                                 "aruco_board",
                                                                 "graspa_board");
             board_transform_bc_.sendTransform(board_graspa_stamped_transform);
+
+            // Take care of single marker messages if necessary
+
+            if (detect_single_markers_)
+            {
+                std::vector<cv::Vec3d> markers_rot, markers_pos;
+
+                ROS_INFO_STREAM("Detecting single markers with " << marker_corners.size() << "corners.");
+
+                cv::aruco::estimatePoseSingleMarkers(marker_corners, board_description_.marker_size_,
+                                        cam_params_->getCameraMatrix(),
+                                        cam_params_->getDistortionCoeffs(),
+                                        markers_rot, markers_pos);
+
+                ROS_INFO_STREAM("Single markers detected");
+
+                // Prepare the marker list array message including every detected marker
+
+                aruco_board_detect::MarkerListPtr marker_list_msg(new aruco_board_detect::MarkerList);
+
+                marker_list_msg->header.frame_id = cam_params_->getCameraFrameId();
+                marker_list_msg->header.stamp = ros::Time::now();
+                marker_list_msg->marker_dictionary.data = board_description_.dict_type_;
+
+                for (int idx=0; idx < markers_rot.size(); idx++)
+                {
+                    // Rotation axis to rotation matrix
+
+                    cv::Mat rot_mat_marker(3, 3, cv::DataType<float>::type);
+                    cv::Rodrigues(markers_rot[idx], rot_mat_marker);
+
+                    // Rotation matrix to quaternion
+
+                    tf::Matrix3x3 rot_mat_marker_tf(rot_mat_marker.at<double>(0,0), rot_mat_marker.at<double>(0,1), rot_mat_marker.at<double>(0,2),
+                                       rot_mat_marker.at<double>(1,0), rot_mat_marker.at<double>(1,1), rot_mat_marker.at<double>(1,2),
+                                       rot_mat_marker.at<double>(2,0), rot_mat_marker.at<double>(2,1), rot_mat_marker.at<double>(2,2));
+
+                    tf::Quaternion quat_marker_tf;
+                    rot_mat_marker_tf.getRotation(quat_marker_tf);
+
+                    // Push back pose and index
+
+                    geometry_msgs::Pose marker_pose;
+                    marker_pose.orientation.x = quat_marker_tf.getX();
+                    marker_pose.orientation.y = quat_marker_tf.getY();
+                    marker_pose.orientation.z = quat_marker_tf.getZ();
+                    marker_pose.orientation.w = quat_marker_tf.getW();
+                    marker_pose.position.x = markers_pos[idx][0];
+                    marker_pose.position.y = markers_pos[idx][1];
+                    marker_pose.position.z = markers_pos[idx][2];
+                    marker_list_msg->marker_poses.push_back(marker_pose);
+
+                    std_msgs::Int16 marker_id;
+                    marker_id.data = marker_ids[idx];
+                    marker_list_msg->marker_ids.push_back(marker_id);
+
+                }
+
+                // Publish marker data
+
+                markers_data_pub_.publish(marker_list_msg);
+
+            }
+
 
         }
     }
