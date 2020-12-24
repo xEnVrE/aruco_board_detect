@@ -8,6 +8,7 @@
     <arg name="config_file"         default="$(find aruco_board_detect)/cfg/board_config.yaml" />
     <arg name="detection_rate"      default="1.0" />
     <arg name="show_debug_img"      default="false" />
+    <arg name="publish_single_markers" default="false" />
 
     <!-- Not these -->
 
@@ -18,6 +19,7 @@
         <rosparam file="$(arg config_file)" />
         <param name="detection_rate"           value="$(arg detection_rate)" />
         <param name="debug_img"                value="$(arg show_debug_img)" />
+        <param name="detect_single_markers"    value="$(arg publish_single_markers)" />
     </node>
 
 </launch>
