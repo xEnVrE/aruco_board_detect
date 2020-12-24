@@ -2,7 +2,7 @@
 #include <ros/ros.h>
 #include <signal.h>
 
-#include "aruco_detect/aruco_board_detect_node.h"
+#include "aruco_board_detect/aruco_board_detect_node.h"
 
 ImageConverter::ImageConverter(ros::NodeHandle& nh, bool show_debug_img) : it_(nh), show_debug_window_(show_debug_img)
 {
