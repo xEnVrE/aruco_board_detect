@@ -190,7 +190,7 @@ ArucoDetectNode::ArucoDetectNode(ros::NodeHandle& nh) : nh_(nh), time_between_ca
 
     // Set up single marker data
 
-    nh.param<float>("single_markers_config/marker_edge_size", single_markers_description_.marker_size_);
+    nh.param<float>("single_markers_config/marker_edge_size", single_markers_description_.marker_size_, board_description_.marker_size_);
     nh.param<int>("single_markers_config/dictionary_type", single_markers_description_.dict_type_, cv::aruco::DICT_4X4_50);
     nh.param<std::vector<int>>("single_markers_config/marker_ids", single_markers_description_.marker_ids_, std::vector<int>());
 
@@ -386,7 +386,7 @@ void ArucoDetectNode::boardDetectionTimedCallback(const ros::TimerEvent&)
             cv::aruco::drawAxis(output_img_,
                                 cam_params_->getCameraMatrix(),
                                 cam_params_->getDistortionCoeffs(),
-                                board_rotation, board_position, 0.05);
+                                board_rotation, board_position, 0.1);
         }
 
         // Take care of single marker messages if necessary
@@ -395,11 +395,10 @@ void ArucoDetectNode::boardDetectionTimedCallback(const ros::TimerEvent&)
         {
             std::vector<cv::Vec3d> markers_rot, markers_pos;
 
-            ROS_INFO_STREAM("Detecting single markers with " << marker_corners.size() << "corners.");
+            ROS_INFO_STREAM("Detected " << single_marker_ids.size() << " single markers");
 
             if (single_marker_ids.size())
             {
-                ROS_INFO_STREAM("Single markers detected");
 
                 cv::aruco::estimatePoseSingleMarkers(single_marker_corners, single_markers_description_.marker_size_,
                                         cam_params_->getCameraMatrix(),
