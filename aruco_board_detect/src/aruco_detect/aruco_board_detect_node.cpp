@@ -247,6 +247,7 @@ void ArucoDetectNode::boardDetectionTimedCallback(const ros::TimerEvent&)
 
     std::vector<int> marker_ids;
     std::vector<std::vector<cv::Point2f>> marker_corners;
+    std::vector<cv::Vec3d> marker_rvecs, marker_tvecs;
 
     cv::aruco::detectMarkers(input_img_, aruco_dict_, marker_corners, marker_ids);
 
@@ -260,8 +261,8 @@ void ArucoDetectNode::boardDetectionTimedCallback(const ros::TimerEvent&)
     // Compute board pose if at least one marker is detected
     if (marker_ids.size() > 0)
     {
+        // Draw all the markers for maximum debugging
         input_img_.copyTo(output_img_);
-        cv::aruco::drawDetectedMarkers(output_img_, marker_corners, marker_ids);
 
         // Attempt to estimate board pose, and if successful draw origin and axes
         // rotation and position are both assumed to be arrays of 3 numbers
@@ -273,25 +274,6 @@ void ArucoDetectNode::boardDetectionTimedCallback(const ros::TimerEvent&)
                                         );
         if (board_estimation_outcome)
         {
-            cv::aruco::drawAxis(output_img_,
-                                cam_params_->getCameraMatrix(),
-                                cam_params_->getDistortionCoeffs(),
-                                board_rotation, board_position, 0.05);
-
-            // Show the output image
-
-            if (show_debug_windows_)
-            {
-                cv::imshow(debug_window_name_, output_img_);
-                cv::waitKey(3);
-            }
-            // Send the output image
-
-            sensor_msgs::ImagePtr image_msg = cv_bridge::CvImage(std_msgs::Header(),
-                                                        "bgr8", output_img_).toImageMsg();
-            image_msg->header.frame_id = cam_params_->getCameraFrameId();
-            output_image_pub_.publish(image_msg);
-
             // std::cout << "Board_position: " << std::endl << board_position << std::endl;
             // std::cout << "Board_rotation: " << std::endl << board_rotation << std::endl;
 
@@ -351,70 +333,104 @@ void ArucoDetectNode::boardDetectionTimedCallback(const ros::TimerEvent&)
                                                                 "graspa_board");
             board_transform_bc_.sendTransform(board_graspa_stamped_transform);
 
-            // Take care of single marker messages if necessary
+            // Draw the board ref system
 
-            if (detect_single_markers_)
+            cv::aruco::drawAxis(output_img_,
+                                cam_params_->getCameraMatrix(),
+                                cam_params_->getDistortionCoeffs(),
+                                board_rotation, board_position, 0.05);
+        }
+
+        // Take care of single marker messages if necessary
+
+        if (detect_single_markers_)
+        {
+            std::vector<cv::Vec3d> markers_rot, markers_pos;
+
+            ROS_INFO_STREAM("Detecting single markers with " << marker_corners.size() << "corners.");
+
+            cv::aruco::estimatePoseSingleMarkers(marker_corners, board_description_.marker_size_,
+                                    cam_params_->getCameraMatrix(),
+                                    cam_params_->getDistortionCoeffs(),
+                                    markers_rot, markers_pos);
+
+            ROS_INFO_STREAM("Single markers detected");
+
+            // Prepare the marker list array message including every detected marker
+
+            aruco_board_detect::MarkerListPtr marker_list_msg(new aruco_board_detect::MarkerList);
+
+            marker_list_msg->header.frame_id = cam_params_->getCameraFrameId();
+            marker_list_msg->header.stamp = ros::Time::now();
+            marker_list_msg->marker_dictionary.data = board_description_.dict_type_;
+
+            for (int idx=0; idx < markers_rot.size(); idx++)
             {
-                std::vector<cv::Vec3d> markers_rot, markers_pos;
+                // Rotation axis to rotation matrix
 
-                ROS_INFO_STREAM("Detecting single markers with " << marker_corners.size() << "corners.");
+                cv::Mat rot_mat_marker(3, 3, cv::DataType<float>::type);
+                cv::Rodrigues(markers_rot[idx], rot_mat_marker);
 
-                cv::aruco::estimatePoseSingleMarkers(marker_corners, board_description_.marker_size_,
-                                        cam_params_->getCameraMatrix(),
-                                        cam_params_->getDistortionCoeffs(),
-                                        markers_rot, markers_pos);
+                // Rotation matrix to quaternion
 
-                ROS_INFO_STREAM("Single markers detected");
+                tf::Matrix3x3 rot_mat_marker_tf(rot_mat_marker.at<double>(0,0), rot_mat_marker.at<double>(0,1), rot_mat_marker.at<double>(0,2),
+                                    rot_mat_marker.at<double>(1,0), rot_mat_marker.at<double>(1,1), rot_mat_marker.at<double>(1,2),
+                                    rot_mat_marker.at<double>(2,0), rot_mat_marker.at<double>(2,1), rot_mat_marker.at<double>(2,2));
 
-                // Prepare the marker list array message including every detected marker
+                tf::Quaternion quat_marker_tf;
+                rot_mat_marker_tf.getRotation(quat_marker_tf);
 
-                aruco_board_detect::MarkerListPtr marker_list_msg(new aruco_board_detect::MarkerList);
+                // Push back pose and index
 
-                marker_list_msg->header.frame_id = cam_params_->getCameraFrameId();
-                marker_list_msg->header.stamp = ros::Time::now();
-                marker_list_msg->marker_dictionary.data = board_description_.dict_type_;
+                geometry_msgs::Pose marker_pose;
+                marker_pose.orientation.x = quat_marker_tf.getX();
+                marker_pose.orientation.y = quat_marker_tf.getY();
+                marker_pose.orientation.z = quat_marker_tf.getZ();
+                marker_pose.orientation.w = quat_marker_tf.getW();
+                marker_pose.position.x = markers_pos[idx][0];
+                marker_pose.position.y = markers_pos[idx][1];
+                marker_pose.position.z = markers_pos[idx][2];
+                marker_list_msg->marker_poses.push_back(marker_pose);
 
-                for (int idx=0; idx < markers_rot.size(); idx++)
-                {
-                    // Rotation axis to rotation matrix
+                std_msgs::Int16 marker_id;
+                marker_id.data = marker_ids[idx];
+                marker_list_msg->marker_ids.push_back(marker_id);
 
-                    cv::Mat rot_mat_marker(3, 3, cv::DataType<float>::type);
-                    cv::Rodrigues(markers_rot[idx], rot_mat_marker);
+                // Draw the single marker axes
 
-                    // Rotation matrix to quaternion
-
-                    tf::Matrix3x3 rot_mat_marker_tf(rot_mat_marker.at<double>(0,0), rot_mat_marker.at<double>(0,1), rot_mat_marker.at<double>(0,2),
-                                       rot_mat_marker.at<double>(1,0), rot_mat_marker.at<double>(1,1), rot_mat_marker.at<double>(1,2),
-                                       rot_mat_marker.at<double>(2,0), rot_mat_marker.at<double>(2,1), rot_mat_marker.at<double>(2,2));
-
-                    tf::Quaternion quat_marker_tf;
-                    rot_mat_marker_tf.getRotation(quat_marker_tf);
-
-                    // Push back pose and index
-
-                    geometry_msgs::Pose marker_pose;
-                    marker_pose.orientation.x = quat_marker_tf.getX();
-                    marker_pose.orientation.y = quat_marker_tf.getY();
-                    marker_pose.orientation.z = quat_marker_tf.getZ();
-                    marker_pose.orientation.w = quat_marker_tf.getW();
-                    marker_pose.position.x = markers_pos[idx][0];
-                    marker_pose.position.y = markers_pos[idx][1];
-                    marker_pose.position.z = markers_pos[idx][2];
-                    marker_list_msg->marker_poses.push_back(marker_pose);
-
-                    std_msgs::Int16 marker_id;
-                    marker_id.data = marker_ids[idx];
-                    marker_list_msg->marker_ids.push_back(marker_id);
-
-                }
-
-                // Publish marker data
-
-                markers_data_pub_.publish(marker_list_msg);
+                cv::aruco::drawAxis(output_img_,
+                                    cam_params_->getCameraMatrix(),
+                                    cam_params_->getDistortionCoeffs(),
+                                    markers_rot[idx],
+                                    markers_pos[idx],
+                                    0.1);
 
             }
 
+            // Draw the marker corners and ids
 
+            cv::aruco::drawDetectedMarkers(output_img_,
+                    marker_corners,
+                    marker_ids);
+
+            // Publish marker data
+
+            markers_data_pub_.publish(marker_list_msg);
+        }
+
+        // Send the output image
+
+        sensor_msgs::ImagePtr image_msg = cv_bridge::CvImage(std_msgs::Header(),
+                                                    "bgr8", output_img_).toImageMsg();
+        image_msg->header.frame_id = cam_params_->getCameraFrameId();
+        output_image_pub_.publish(image_msg);
+
+        // Show the output image
+
+        if (show_debug_windows_)
+        {
+            cv::imshow(debug_window_name_, output_img_);
+            cv::waitKey(3);
         }
     }
 }
