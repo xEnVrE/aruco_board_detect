@@ -1,6 +1,11 @@
 #!/usr/bin/env python
 
-# Find the pose of the camera by using the markerboard
+# This script allows to use a second camera, detached from the robot.
+# Since it is quite tricky to set up a multi-realsense setup, we first
+# acquire the pose of a markerboard in front of the robot and then ask the user
+# to hot-swap the cameras (i.e. unplug the first one and connect the second one).
+# This, however, requires the user to disable any static transform broadcaster
+# between the robot frames and the camera frame, otherwise there will be
 
 import rospy
 
@@ -14,43 +19,51 @@ CAMERA_FRAME_NAME = "camera_link"
 
 if __name__ == "__main__":
 
-
     rospy.init_node("camera_locator")
 
     # Configure TF transform listener and broadcaster
     tf_listener = tf.TransformListener(True, rospy.Duration(10))
     tf_broadcaster = tf.TransformBroadcaster()
 
+    root_to_board_matrix = None
+    camera_to_board_matrix = None
+
     rospy.loginfo("Listening for transfom from {} to {}...".format(ROOT_FRAME_NAME, BOARD_FRAME_NAME))
 
-    if not (tf_listener.frameExists(BOARD_FRAME_NAME) and self._tf_listener.frameExists(ROOT_FRAME_NAME)):
-            rospy.logerr("Either tf transform {} or {} do not exist".format(BOARD_FRAME_NAME, ROOT_FRAME_NAME))
-            return 0
+    rate = rospy.Rate(10)
 
-    tf_listener.waitForTransform(ROOT_FRAME_NAME, BOARD_FRAME_NAME, rospy.Time.now(), rospy.Duration(5.0))
-
-    translation, rotation = tf_listener.lookupTransform(BOARD_FRAME_NAME, ROOT_FRAME_NAME, rospy.Time(0))
-
-    root_to_board_matrix = np.dot(transformations.translation_matrix(translation), transformations.quaternion_matrix(rotation))
+    while not rospy.is_shutdown():
+        try:
+            (translation, rotation) = tf_listener.lookupTransform(ROOT_FRAME_NAME, BOARD_FRAME_NAME, rospy.Time(0))
+            root_to_board_matrix = np.dot(transformations.translation_matrix(translation), transformations.quaternion_matrix(rotation))
+            break
+        except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
+            continue
 
     raw_input("Plug in the new camera and press any key")
 
-    rospy.loginfo("Listening for transfom from {} to {}...".format(CAMERA_FRAME_NAME, BOARD_FRAME_NAME))
+    rospy.loginfo("Listening for transform from {} to {}...".format(CAMERA_FRAME_NAME, BOARD_FRAME_NAME))
 
-    tf_listener.waitForTransform(CAMERA_FRAME_NAME, BOARD_FRAME_NAME, rospy.Time.now(), rospy.Duration(5.0))
-
-    translation, rotation = tf_listener.lookupTransform(BOARD_FRAME_NAME, CAMERA_FRAME_NAME, rospy.Time(0))
-
-    camera_to_board_matrix = np.dot(transformations.translation_matrix(translation), transformations.quaternion_matrix(rotation))
+    while not rospy.is_shutdown():
+        try:
+            translation, rotation = tf_listener.lookupTransform(CAMERA_FRAME_NAME, BOARD_FRAME_NAME, rospy.Time(0))
+            camera_to_board_matrix = np.dot(transformations.translation_matrix(translation), transformations.quaternion_matrix(rotation))
+            break
+        except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
+            continue
 
     root_to_camera_matrix = np.dot(root_to_board_matrix, np.linalg.inv(camera_to_board_matrix))
-
     translation = transformations.translation_from_matrix(root_to_camera_matrix)
+    rotation = transformations.quaternion_about_axis(transformations.rotation_from_matrix(root_to_camera_matrix)[0], transformations.rotation_from_matrix(root_to_camera_matrix)[1])
 
-    rotation = transformations.rotation_from_matrix(root_to_camera_matrix)
+    rospy.loginfo("Transform computed. Broadcasting transform...")
 
-
-
+    while not rospy.is_shutdown():
+        tf_broadcaster.sendTransform(translation,
+                                rotation,
+                                rospy.Time.now(),
+                                "camera_link",
+                                "panda_link0")
 
 
 
