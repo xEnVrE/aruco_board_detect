@@ -381,7 +381,7 @@ void ArucoDetectNode::boardDetectionTimedCallback(const ros::TimerEvent&)
             cv::aruco::drawDetectedMarkers(output_img_,
                                           board_marker_corners,
                                           board_marker_ids,
-                                          cv::Scalar(0, 255, 0));
+                                          cv::Scalar(0,255,165));
 
             cv::aruco::drawAxis(output_img_,
                                 cam_params_->getCameraMatrix(),
@@ -459,7 +459,7 @@ void ArucoDetectNode::boardDetectionTimedCallback(const ros::TimerEvent&)
                 cv::aruco::drawDetectedMarkers(output_img_,
                                     single_marker_corners,
                                     single_marker_ids,
-                                    cv::Scalar(0,0,255));
+                                    cv::Scalar(0,165,255));
 
                 // Publish marker data
 
