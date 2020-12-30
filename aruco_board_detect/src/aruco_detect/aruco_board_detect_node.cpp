@@ -154,7 +154,6 @@ ArucoDetectNode::ArucoDetectNode(ros::NodeHandle& nh) : nh_(nh), time_between_ca
     nh.param<bool>("detect_single_markers", detect_single_markers_, false);
 
     img_converter_ = std::unique_ptr<ImageConverter>(new ImageConverter(nh_, show_debug_windows_));
-    // img_converter_ = std::make_unique<ImageConverter>(nh);
 
     // Publish output images
 
@@ -188,6 +187,12 @@ ArucoDetectNode::ArucoDetectNode(ros::NodeHandle& nh) : nh_(nh), time_between_ca
                                                 board_description_.marker_size_,
                                                 board_description_.marker_stride_,
                                                 aruco_dict_);
+
+    // Set up single marker data
+
+    nh.param<float>("marker_edge_size", single_markers_description_.marker_size_);
+    nh.param<int>("dictionary_type", single_markers_description_.dict_type_, cv::aruco::DICT_4X4_50);
+    nh.param<std::vector<int>>("marker_ids", single_markers_description_.marker_ids_, std::vector<int>());
 
 }
 
@@ -249,6 +254,9 @@ void ArucoDetectNode::boardDetectionTimedCallback(const ros::TimerEvent&)
     std::vector<std::vector<cv::Point2f>> marker_corners;
     std::vector<cv::Vec3d> marker_rvecs, marker_tvecs;
 
+    std::vector<int> single_marker_ids;
+    std::vector<std::vector<cv::Point2f>> single_marker_corners;
+
     cv::aruco::detectMarkers(input_img_, aruco_dict_, marker_corners, marker_ids);
 
     // Using Vec3d causes the estimatePoseBoard method to use them as initial guess in opencv3.2
@@ -263,6 +271,11 @@ void ArucoDetectNode::boardDetectionTimedCallback(const ros::TimerEvent&)
     {
         // Draw all the markers for maximum debugging
         input_img_.copyTo(output_img_);
+<<<<<<< Updated upstream
+=======
+
+        cv::aruco::drawDetectedMarkers(output_img_, marker_corners, marker_ids);
+>>>>>>> Stashed changes
 
         // Attempt to estimate board pose, and if successful draw origin and axes
         // rotation and position are both assumed to be arrays of 3 numbers

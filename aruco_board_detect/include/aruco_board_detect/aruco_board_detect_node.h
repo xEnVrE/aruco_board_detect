@@ -160,6 +160,14 @@ class ArucoDetectNode
         int dict_type_;
     };
 
+    struct SingleMarkerDescription
+    {
+        std::vector<int> marker_ids_;
+        float marker_size_;
+        int dict_type_;
+    };
+
+    SingleMarkerDescription single_markers_description_;
     ArucoBoardDescription board_description_;
     cv::Ptr<cv::aruco::Dictionary> aruco_dict_;
     cv::Ptr<cv::aruco::GridBoard> aruco_board_;
