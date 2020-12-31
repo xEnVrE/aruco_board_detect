@@ -9,6 +9,9 @@
 #include <sensor_msgs/image_encodings.h>
 #include <tf/transform_broadcaster.h>
 
+// Custom messages
+#include <aruco_board_detect/MarkerList.h>
+
 // OpenCV + ArUCO
 #include <opencv2/opencv.hpp>
 #include <opencv2/aruco.hpp>
@@ -132,6 +135,8 @@ class ArucoDetectNode
 
     ros::Publisher board_pose_pub_;
 
+    ros::Publisher markers_data_pub_ ;
+
     image_transport::Publisher output_image_pub_;
 
     tf::TransformBroadcaster board_transform_bc_;
@@ -144,6 +149,7 @@ class ArucoDetectNode
 
     std::string debug_window_name_;
     bool show_debug_windows_;
+    bool detect_single_markers_;
 
     struct ArucoBoardDescription
     {
@@ -154,6 +160,14 @@ class ArucoDetectNode
         int dict_type_;
     };
 
+    struct SingleMarkerDescription
+    {
+        std::vector<int> marker_ids_;
+        float marker_size_;
+        int dict_type_;
+    };
+
+    SingleMarkerDescription single_markers_description_;
     ArucoBoardDescription board_description_;
     cv::Ptr<cv::aruco::Dictionary> aruco_dict_;
     cv::Ptr<cv::aruco::GridBoard> aruco_board_;

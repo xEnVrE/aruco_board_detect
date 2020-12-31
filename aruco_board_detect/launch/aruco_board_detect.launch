@@ -5,9 +5,11 @@
     <arg name="node_name"           default="aruco_board_detector" />
     <arg name="camera_info_topic"   default="/camera/color/camera_info" />
     <arg name="camera_image_topic"  default="/camera/color/image_raw" />
-    <arg name="config_file"         default="$(find aruco_board_detect)/cfg/board_config.yaml" />
+    <arg name="board_config_file"   default="$(find aruco_board_detect)/cfg/board_config.yaml" />
+    <arg name="single_markers_config_file"         default="$(find aruco_board_detect)/cfg/single_markers_config.yaml" />
     <arg name="detection_rate"      default="1.0" />
     <arg name="show_debug_img"      default="false" />
+    <arg name="publish_single_markers" default="false" />
 
     <!-- Not these -->
 
@@ -15,9 +17,11 @@
     <remap from="$(arg node_name)/input/image_raw" to="$(arg camera_image_topic)" />
     <node name="aruco_board_detector" pkg="aruco_board_detect" type="aruco_board_detect_node" output="screen" >
         <!-- node parameters -->
-        <rosparam file="$(arg config_file)" />
+        <rosparam file="$(arg board_config_file)" ns="board_config"/>
+        <rosparam file="$(arg single_markers_config_file)" ns="single_markers_config"/>
         <param name="detection_rate"           value="$(arg detection_rate)" />
         <param name="debug_img"                value="$(arg show_debug_img)" />
+        <param name="detect_single_markers"    value="$(arg publish_single_markers)" />
     </node>
 
 </launch>
