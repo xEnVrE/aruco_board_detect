@@ -46,27 +46,27 @@ if __name__ == "__main__":
 
     while not rospy.is_shutdown():
         try:
+
             translation, rotation = tf_listener.lookupTransform(CAMERA_FRAME_NAME, BOARD_FRAME_NAME, rospy.Time(0))
             camera_to_board_matrix = np.dot(transformations.translation_matrix(translation), transformations.quaternion_matrix(rotation))
-            break
+            root_to_camera_matrix = np.dot(root_to_board_matrix, np.linalg.inv(camera_to_board_matrix))
+
+            translation = transformations.translation_from_matrix(root_to_camera_matrix)
+            rotation = transformations.quaternion_about_axis(transformations.rotation_from_matrix(root_to_camera_matrix)[0], transformations.rotation_from_matrix(root_to_camera_matrix)[1])
+            rospy.loginfo("Transform computed. Broadcasting transform...")
+
+            tf_broadcaster.sendTransform(translation,
+                        rotation,
+                        rospy.Time.now(),
+                        "camera_link",
+                        "panda_link0")
+
+            rospy.sleep(0.1)
+
         except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
+            rospy.logerr("Error computing transform. Transform broadcasting offline")
+            rospy.sleep(rospy.Duration(1))
             continue
-
-    root_to_camera_matrix = np.dot(root_to_board_matrix, np.linalg.inv(camera_to_board_matrix))
-    translation = transformations.translation_from_matrix(root_to_camera_matrix)
-    rotation = transformations.quaternion_about_axis(transformations.rotation_from_matrix(root_to_camera_matrix)[0], transformations.rotation_from_matrix(root_to_camera_matrix)[1])
-
-    rospy.loginfo("Transform computed. Broadcasting transform...")
-
-    while not rospy.is_shutdown():
-        tf_broadcaster.sendTransform(translation,
-                                rotation,
-                                rospy.Time.now(),
-                                "camera_link",
-                                "panda_link0")
-
-
-
 
 
 

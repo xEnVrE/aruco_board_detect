@@ -442,7 +442,7 @@ void ArucoDetectNode::boardDetectionTimedCallback(const ros::TimerEvent&)
                     marker_list_msg->marker_poses.push_back(marker_pose);
 
                     std_msgs::Int16 marker_id;
-                    marker_id.data = marker_ids[idx];
+                    marker_id.data = single_marker_ids[idx];
                     marker_list_msg->marker_ids.push_back(marker_id);
 
                     // Draw the single markers and axes
