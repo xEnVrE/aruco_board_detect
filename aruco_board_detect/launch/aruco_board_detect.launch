@@ -15,7 +15,7 @@
 
     <remap from="$(arg node_name)/input/camera_info" to="$(arg camera_info_topic)" />
     <remap from="$(arg node_name)/input/image_raw" to="$(arg camera_image_topic)" />
-    <node name="aruco_board_detector" pkg="aruco_board_detect" type="aruco_board_detect_node" output="screen" >
+    <node name="aruco_board_detector" pkg="aruco_board_detect" type="aruco_board_detect_node">
         <!-- node parameters -->
         <rosparam file="$(arg board_config_file)" ns="board_config"/>
         <rosparam file="$(arg single_markers_config_file)" ns="single_markers_config"/>
