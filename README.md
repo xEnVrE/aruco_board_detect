@@ -4,20 +4,19 @@ ROS package to detect aruco boards and markers in images, estimating their pose.
 
 ## Prerequisites (assuming Ubuntu 20.04)
 
-1. Install `OpenCV`
+- Install `OpenCV`
   ```console
   sudo apt install libopencv-dev
   ```
 
-## Installation instructions
+## Installation
 
 1. Clone within a working ROS workspace $WS
   ```console
   cd $WS/src
   git clone https://github.com/xenvre/aruco_board_detect
   ```
-
-1. Build
+2. Build
   ```console
   cd $WS
   catkin build
@@ -25,7 +24,13 @@ ROS package to detect aruco boards and markers in images, estimating their pose.
 
 ## Usage
 
-Once a camera is plugged in your rig and its node is running, simply use the `roslaunch` file provided. Some `roslaunch` parameters you might find useful:
+Once a camera is plugged in your rig and its node is running, simply use the `roslaunch` file provided:
+
+```console
+roslaunch aruco_board_detect aruco_board_detect.launch publish_single_markers:=true show_debug_img:=true
+```
+
+Some `roslaunch` parameters you might find useful:
 
 | Parameter | Effect |
 | --- | --- |
@@ -39,9 +44,7 @@ Once a camera is plugged in your rig and its node is running, simply use the `ro
 
 You can change the configuration of the marker board being sought in the `cfg/board_config.yaml` file. Same goes for individual markers.
 
-The package also contains a script to generate fiducial markers.
-
-## Expected output
+## Inputs/outputs
 
 The node will broadcast a tf frame named `aruco_board` (the board reference frame) and one named `graspa_board` (the same frame, shifted on the bottom right of the board).
 
@@ -60,23 +63,11 @@ The node will broadcast a tf frame named `aruco_board` (the board reference fram
 | `camera_info_topic` | Camera parameters topic |
 | `camera_image_topic` | Camera image topic |
 
-### Example command
-
-```
-roscore
-roslaunch realsense2_camera rs_rgbd.launch
-roslaunch aruco_board_detect aruco_board_detect.launch publish_single_markers:=true show_debug_img:=true
-```
-
-<img src=assets/output.jpeg width=1000/>
-
-### Script example command
+## Marker generator
 
 The following command can be used to generate a 400x400 px marker (ID 44) with a 100 px white border (quiet zone) and a 50 px black border. `DICT_4X4_50` is the dictionary, as defined by the OpenCV headers.
 
-```
+```console
 python `rospack find aruco_board_detect`/scripts/generate_aruco.py -o marker_44.png -w 100 -b 50 -s 400 -i 44 -t DICT_4X4_50
 
 ```
-
-<img src=assets/marker_44.png width=400/>
