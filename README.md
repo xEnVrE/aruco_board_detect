@@ -2,7 +2,7 @@
 
 ROS package to detect aruco boards and markers in images, estimating their pose. Written in C++ and Python.
 
-## Prerequisites (assuming Ubuntu 20.04)
+## Prerequisites
 
 - Install `OpenCV`
   ```console
