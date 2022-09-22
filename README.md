@@ -2,26 +2,26 @@
 
 ROS package to detect aruco boards and markers in images, estimating their pose. Written in C++ and Python.
 
-## Install tips
+## Prerequisites (assuming Ubuntu 20.04)
 
-This package depends on OpenCV and the ArUCO library bundled with it. You might want to build [OpenCV](https://github.com/opencv/opencv) and [opencv-contrib](https://github.com/opencv/opencv-contrib) from source, since fiducial marker detection is somewhat dodgy in OpenCV<3.2, and OpenCV 3.2 is bundled with Ubuntu Bionic and ROS Melodic.
+1. Install `OpenCV`
+  ```console
+  sudo apt install libopencv-dev
+  ```
 
+## Installation instructions
 
- ```
-export OpenCV_DIR=your/opencv/build/or/install/path
-catkin build -DOpenCV_DIR=${OpenCV_DIR}
- ```
-or
-```
-export OpenCV_DIR=your/opencv/build/or/install/path
-catkin_make -DOpenCV_DIR=${OpenCV_DIR}
-```
-to build the workspace. On Ubuntu Bionic I had to compile from source the dependencies of this package that also rely on OpenCV:
-```
-common_msgs (jade-devel)
-image_common (hydro-devel)
-vision_opencv (melodic)
-```
+1. Clone within a working ROS workspace $WS
+  ```console
+  cd $WS/src
+  git clone https://github.com/xenvre/aruco_board_detect
+  ```
+
+1. Build
+  ```console
+  cd $WS
+  catkin build
+  ```
 
 ## Usage
 
@@ -45,7 +45,7 @@ The package also contains a script to generate fiducial markers.
 
 The node will broadcast a tf frame named `aruco_board` (the board reference frame) and one named `graspa_board` (the same frame, shifted on the bottom right of the board).
 
-### Publish
+### Published topics
 
 | Topic | Explanation |
 | - | - |
@@ -53,7 +53,7 @@ The node will broadcast a tf frame named `aruco_board` (the board reference fram
 | `/aruco_board_detector/debug_image` | The output image, i.e. the input image with markers drawn on it |
 | `/aruco_board_detector/marker_data` | Stamped 6D pose of every single marker detected, with ID |
 
-### Subscribe
+### Subscribed topics
 
 | Topic | Explanation |
 | - | - |
@@ -80,5 +80,3 @@ python `rospack find aruco_board_detect`/scripts/generate_aruco.py -o marker_44.
 ```
 
 <img src=assets/marker_44.png width=400/>
-
-
