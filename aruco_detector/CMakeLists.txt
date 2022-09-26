@@ -15,7 +15,9 @@ find_package(catkin REQUIRED COMPONENTS
   tf
 )
 
-find_package(OpenCV)
+find_package(OpenCV REQUIRED)
+
+find_package(Eigen3 REQUIRED)
 
 # Messages
 add_message_files(
@@ -53,4 +55,5 @@ add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catk
 target_link_libraries(${PROJECT_NAME}_node
   ${catkin_LIBRARIES}
   ${OpenCV_LIBS}
+  Eigen3::Eigen
 )

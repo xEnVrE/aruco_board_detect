@@ -5,6 +5,9 @@
 #include <aruco_detector_node.h>
 #include <aruco_detector/MarkerList.h>
 
+#include <Eigen/Dense>
+#include <opencv2/core/eigen.hpp>
+
 
 ArucoDetectorNode::ArucoDetectorNode(ros::NodeHandle& nh) : nh_(nh), time_between_callbacks_(0.2), it_(nh)
 {
@@ -28,6 +31,11 @@ ArucoDetectorNode::ArucoDetectorNode(ros::NodeHandle& nh) : nh_(nh), time_betwee
 
     // Publish output images
     output_image_pub_ = it_.advertise("debug_image", 1);
+
+    // Publish output poses
+    // std::vector<ros::Publisher> pose_pubs_;
+    for (const int& marker_id : description_.marker_ids)
+        pose_pubs_[marker_id] =  nh_.advertise<geometry_msgs::PoseStamped>("marker_" + std::to_string(marker_id) + "_pose", 1);
 
     // Setup the detection callback
     timer_ = nh_.createTimer(ros::Duration(time_between_callbacks_), &ArucoDetectorNode::detectionTimedCallback, this);
@@ -117,6 +125,27 @@ void ArucoDetectorNode::detectionTimedCallback(const ros::TimerEvent&)
                     0.04
                 );
             }
+
+            // Convert rotation vector to a quaternion
+            Eigen::Matrix3d rotation_matrix_eig;
+            cv::Mat rotation_matrix;
+            cv::Rodrigues(orientation.at(i), rotation_matrix);
+            cv::cv2eigen(rotation_matrix, rotation_matrix_eig);
+            Eigen::Quaterniond quaternion(rotation_matrix_eig);
+
+            // Publish the estimated pose
+            geometry_msgs::PoseStamped marker_pose;
+            marker_pose.header.stamp = ros::Time::now();
+            marker_pose.header.frame_id = cam_params_->getCameraFrameId();
+            marker_pose.pose.position.x = position.at(i)[0];
+            marker_pose.pose.position.y = position.at(i)[1];
+            marker_pose.pose.position.z = position.at(i)[2];
+            marker_pose.pose.orientation.x = quaternion.x();
+            marker_pose.pose.orientation.y = quaternion.y();
+            marker_pose.pose.orientation.z = quaternion.z();
+            marker_pose.pose.orientation.w = quaternion.w();
+
+            pose_pubs_.at(ids.at(i)).publish(marker_pose);
         }
     }
 

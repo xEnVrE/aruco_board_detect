@@ -1,18 +1,16 @@
 #ifndef ARUCO_DETECTOR_NODE_H
 #define ARUCO_DETECTOR_NODE_H
 
-/* ROS */
 #include <ros/ros.h>
 #include <tf/transform_broadcaster.h>
 
-/* OpenCV */
 #include <opencv2/opencv.hpp>
 #include <opencv2/aruco.hpp>
 #include <opencv2/aruco/dictionary.hpp>
-// #include <opencv2/highgui/highgui.hpp>
 
 #include <memory>
 #include <string>
+#include <unordered_map>
 
 #include <camera_parameters.h>
 #include <image_converter.h>
@@ -52,26 +50,11 @@ private:
     cv::Ptr<cv::aruco::Dictionary> aruco_dict_;
 
     /**
-     * Board description
-     */
-    // struct ArucoBoardDescription
-    // {
-    //     int n_markers_x_;
-    //     int n_markers_y_;
-    //     float marker_size_;
-    //     float marker_stride_;
-    //     int dict_type_;
-    // };
-    // ArucoBoardDescription board_description_;
-    // cv::Ptr<cv::aruco::GridBoard> aruco_board_;
-
-    /**
      * ROS-related
      */
     ros::NodeHandle nh_;
     ros::Subscriber cam_info_sub_;
-    // ros::Publisher board_pose_pub_;
-    ros::Publisher markers_data_pub_ ;
+    std::unordered_map<int, ros::Publisher> pose_pubs_;
     ros::Timer timer_;
 
     /**
