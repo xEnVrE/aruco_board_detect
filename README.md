@@ -65,9 +65,15 @@ The node will broadcast a tf frame named `aruco_board` (the board reference fram
 
 ## Marker generator
 
-The following command can be used to generate a 400x400 px marker (ID 44) with a 100 px white border (quiet zone) and a 50 px black border. `DICT_4X4_50` is the dictionary, as defined by the OpenCV headers.
+The following command shows how to generate an ArUco marker. In the example, we consider a 4.0 x 4.0 cm marker using ID = 0 (`-i 0`) from the dictonary `DICT_4X4_50` (`-t DICT_5X5_50`).
 
 ```console
-python `rospack find aruco_board_detect`/scripts/generate_aruco.py -o marker_44.png -w 100 -b 50 -s 400 -i 44 -t DICT_4X4_50
+python `rospack find aruco_board_detect`/scripts/generate_aruco.py -o marker.png -s 4.0 -i 0 -t DICT_5X5_50
 
+```
+
+For futher options, run the above command with `--help`:
+
+```console
+python `rospack find aruco_board_detect`/scripts/generate_aruco.py --help
 ```
