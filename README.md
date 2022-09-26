@@ -1,6 +1,6 @@
 # aruco_board_detect
 
-ROS package to detect aruco boards and markers in images, estimating their pose. Written in C++ and Python.
+ROS package to detect aruco boards and markers in images, estimating their pose.
 
 ## Prerequisites
 
