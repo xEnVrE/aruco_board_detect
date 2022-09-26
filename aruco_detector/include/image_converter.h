@@ -20,9 +20,8 @@ public:
      * @brief Construct a new Image Converter object
      *
      * @param nh ROS node handle. Necessary to subscribe to the input image topic
-     * @param show_debug_img Whether to show the received images in a CV window
      */
-    ImageConverter(ros::NodeHandle& nh, bool show_debug_img);
+    ImageConverter(ros::NodeHandle& nh);
 
     ~ImageConverter();
 

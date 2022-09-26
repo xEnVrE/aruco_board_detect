@@ -1,5 +1,5 @@
-#ifndef ARUCO_BOARD_DETECT_NODE_H
-#define ARUCO_BOARD_DETECT_NODE_H
+#ifndef ARUCO_DETECTOR_NODE_H
+#define ARUCO_DETECTOR_NODE_H
 
 /* ROS */
 #include <ros/ros.h>
@@ -19,35 +19,26 @@
 
 
 /**
- * @brief Class to perform aruco board detection from camera images. It sets up
- * the proper callbacks and call the board detector once in a while.
+ * @brief Class to perform aruco detection from camera images. It sets up
+ * the proper callbacks and call the detector once in a while.
  * Publishes the pose as a tf transform and on a PoseStamped topic.
  *
  */
-class ArucoDetectNode
+class ArucoDetectorNode
 {
 public:
-    ArucoDetectNode(ros::NodeHandle& nh);
+    ArucoDetectorNode(ros::NodeHandle& nh);
 
-    ~ArucoDetectNode();
+    ~ArucoDetectorNode();
 
     void cameraParamsAcquisitionCallback(const sensor_msgs::CameraInfo& cam_info_msg);
 
-    void boardDetectionTimedCallback(const ros::TimerEvent&);
+    void detectionTimedCallback(const ros::TimerEvent&);
 
 private:
     /**
-     * Marker and boards description
+     * Marker description
      */
-    struct ArucoBoardDescription
-    {
-        int n_markers_x_;
-        int n_markers_y_;
-        float marker_size_;
-        float marker_stride_;
-        int dict_type_;
-    };
-
     struct SingleMarkerDescription
     {
         std::vector<int> marker_ids_;
@@ -56,23 +47,35 @@ private:
     };
 
     SingleMarkerDescription single_markers_description_;
-    ArucoBoardDescription board_description_;
     cv::Ptr<cv::aruco::Dictionary> aruco_dict_;
-    cv::Ptr<cv::aruco::GridBoard> aruco_board_;
+
+    /**
+     * Board description
+     */
+    // struct ArucoBoardDescription
+    // {
+    //     int n_markers_x_;
+    //     int n_markers_y_;
+    //     float marker_size_;
+    //     float marker_stride_;
+    //     int dict_type_;
+    // };
+    // ArucoBoardDescription board_description_;
+    // cv::Ptr<cv::aruco::GridBoard> aruco_board_;
 
     /**
      * ROS-related
      */
     ros::NodeHandle nh_;
     ros::Subscriber cam_info_sub_;
-    ros::Publisher board_pose_pub_;
+    // ros::Publisher board_pose_pub_;
     ros::Publisher markers_data_pub_ ;
     ros::Timer timer_;
 
     /**
      * TF-related
      */
-    tf::TransformBroadcaster board_transform_bc_;
+    // tf::TransformBroadcaster board_transform_bc_;
 
     /**
      * Image handling-related
@@ -90,7 +93,7 @@ private:
     bool show_debug_windows_;
     bool detect_single_markers_;
     float time_between_callbacks_;
-    std::string debug_window_name_;
+    const std::string debug_window_name_ = "ArUco detection";
 };
 
 #endif

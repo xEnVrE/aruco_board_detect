@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(aruco_board_detect)
+project(aruco_detector)
 
-add_compile_options(-std=c++11)
+add_compile_options(-std=c++14)
 
 # Packages
 find_package(catkin REQUIRED COMPONENTS
@@ -37,7 +37,7 @@ catkin_package(
 )
 
 include_directories(
-  include/aruco_board_detect
+  include
   ${catkin_INCLUDE_DIRS}
 )
 
@@ -46,7 +46,7 @@ add_executable(
   ${PROJECT_NAME}_node
   src/camera_parameters.cpp
   src/image_converter.cpp
-  src/aruco_board_detect_node.cpp
+  src/aruco_detector_node.cpp
   src/main.cpp
 )
 add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})

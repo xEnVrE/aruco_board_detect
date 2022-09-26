@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>aruco_board_detect</name>
+  <name>aruco_detector</name>
   <version>0.0.1</version>
-  <description>The aruco_board_detect package</description>
+  <description>An ArUco-based marker pose detector </description>
 
   <maintainer email="nicola.piga@iit.it">Nicola Piga</maintainer>
 
