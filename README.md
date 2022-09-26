@@ -1,6 +1,6 @@
-# aruco_board_detect
+# aruco_detector
 
-ROS package to detect aruco boards and markers in images, estimating their pose.
+ROS package to detect aruco markers in images and estimate their pose.
 
 ## Prerequisites
 
