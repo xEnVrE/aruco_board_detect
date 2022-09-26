@@ -17,8 +17,8 @@ if __name__ == "__main__":
     parser.add_argument("-i", "--id", type=int, required=True, help="ID of ArUco tag to generate")
     parser.add_argument("-t", "--type", type=str, default="DICT_ARUCO_ORIGINAL", help="Type of ArUco tag to generate")
     parser.add_argument("-s", "--size", required=True, type=float, help="Size (in centimeters)")
-    parser.add_argument("-b", "--bborder", type=int, default=50, help="Black border around marker (in pixel)")
-    parser.add_argument("-w", "--wborder", type=int, default=50, help="White border around marker (in pixel)")
+    parser.add_argument("-b", "--bborder", type=float, default=0.0, help="Black border around marker (in centimeters)")
+    parser.add_argument("-w", "--wborder", type=float, default=0.0, help="White border around marker (in centimeters)")
 
     args = vars(parser.parse_args())
 
@@ -58,13 +58,22 @@ if __name__ == "__main__":
 
     print("[INFO] Generating marker ID {} from dictionary {}".format(args['id'], args['type']))
 
-    marker = np.zeros((args['size'], args['size'], 1), dtype=np.uint8)
-    cv2.aruco.drawMarker(aruco_dict, args['id'], args['size'], marker, 1)
+    def cm_to_pixel(size):
+        # Evaluate size in pixel assuming 300-ppi resolution
+        cm_to_inches = 0.3937007874
+        pixel_per_inch = 300
+        size_pixel = int(size * cm_to_inches * pixel_per_inch)
+
+        return size_pixel
+
+    size_pixel = cm_to_pixel(args['size'])
+    marker = np.zeros((size_pixel, size_pixel, 1), dtype=np.uint8)
+    cv2.aruco.drawMarker(aruco_dict, args['id'], size_pixel, marker, 1)
 
     if args['wborder'] > 0 or args['bborder'] > 0:
-        size = args['size']
-        bborder = args['bborder']
-        wborder = args['wborder']
+        size = size_pixel
+        bborder = cm_to_pixel(args['bborder'])
+        wborder = cm_to_pixel(args['wborder'])
         border = wborder + bborder
 
         bordered_image = np.zeros((size+2*border, size+2*border, 1), dtype=np.uint8)
