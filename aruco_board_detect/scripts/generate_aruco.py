@@ -13,25 +13,14 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("-o", "--output", required=True,
-                        help="path to output image containing ArUCo tag")
-    parser.add_argument("-i", "--id", type=int, required=True,
-                        help="ID of ArUCo tag to generate")
-    parser.add_argument("-t", "--type", type=str,
-                        default="DICT_ARUCO_ORIGINAL",
-                        help="type of ArUCo tag to generate")
-    parser.add_argument("-s", "--size", required=True, type=int,
-                        help="size (in pixel)")
-    parser.add_argument("-b", "--bborder", type=int,
-                        default=50,
-                        help="black border around marker (in pixel)")
-    parser.add_argument("-w", "--wborder", type=int,
-                        default=50,
-                        help="white border around marker (in pixel)")
+    parser.add_argument("-o", "--output", required=True, help="Path to output image containing ArUco tag")
+    parser.add_argument("-i", "--id", type=int, required=True, help="ID of ArUco tag to generate")
+    parser.add_argument("-t", "--type", type=str, default="DICT_ARUCO_ORIGINAL", help="Type of ArUco tag to generate")
+    parser.add_argument("-s", "--size", required=True, type=float, help="Size (in centimeters)")
+    parser.add_argument("-b", "--bborder", type=int, default=50, help="Black border around marker (in pixel)")
+    parser.add_argument("-w", "--wborder", type=int, default=50, help="White border around marker (in pixel)")
 
     args = vars(parser.parse_args())
-
-    print(args)
 
     # Verify the dictionary tag is valid
     # Names of each possible ArUco tag OpenCV supports
@@ -57,11 +46,11 @@ if __name__ == "__main__":
     }
 
     if args['type'] not in ARUCO_DICT.keys():
-        print("[INFO] ArUCo tag of '{}' is not supported".format(
+        print("[INFO] ArUco tag of '{}' is not supported".format(
 		args["type"]))
         sys.exit(0)
 
-    # Load the ArUCo dictionary
+    # Load the ArUco dictionary
 
     aruco_dict = cv2.aruco.Dictionary_get(ARUCO_DICT[args['type']])
 
