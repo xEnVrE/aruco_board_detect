@@ -1,3 +1,4 @@
-marker_edge_size : 0.05
+# cv::aruco::DICT_4X4_50 is 0
 dictionary_type : 0
-marker_ids : [ 41, 42, 43, 44]
+marker_edge_size : 0.04
+marker_ids : [ 0 ]
