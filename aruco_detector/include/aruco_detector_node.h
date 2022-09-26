@@ -36,17 +36,19 @@ public:
     void detectionTimedCallback(const ros::TimerEvent&);
 
 private:
+    bool isIdWithinList(const int& id, const std::vector<int>& list);
+
     /**
      * Marker description
      */
-    struct SingleMarkerDescription
+    struct MarkerDescription
     {
-        std::vector<int> marker_ids_;
-        float marker_size_;
-        int dict_type_;
+        std::vector<int> marker_ids;
+        float marker_size;
+        int dict_type;
     };
 
-    SingleMarkerDescription single_markers_description_;
+    MarkerDescription description_;
     cv::Ptr<cv::aruco::Dictionary> aruco_dict_;
 
     /**
@@ -91,7 +93,6 @@ private:
      * Other variables
      */
     bool show_debug_windows_;
-    bool detect_single_markers_;
     float time_between_callbacks_;
     const std::string debug_window_name_ = "ArUco detection";
 };
