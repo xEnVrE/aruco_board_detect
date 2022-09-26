@@ -4,10 +4,11 @@ ROS package to detect aruco boards and markers in images, estimating their pose.
 
 ## Prerequisites
 
-- Install `OpenCV`
-  ```console
-  sudo apt install libopencv-dev
-  ```
+- `OpenCV`
+  > e.g., in Ubuntu
+  >```console
+  >sudo apt install libopencv-dev
+  >```
 
 ## Installation
 
