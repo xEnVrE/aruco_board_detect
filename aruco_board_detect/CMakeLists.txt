@@ -37,12 +37,18 @@ catkin_package(
 )
 
 include_directories(
-  include
+  include/aruco_board_detect
   ${catkin_INCLUDE_DIRS}
 )
 
 # Main executable configuration
-add_executable(${PROJECT_NAME}_node src/aruco_detect/aruco_board_detect_node.cpp)
+add_executable(
+  ${PROJECT_NAME}_node
+  src/camera_parameters.cpp
+  src/image_converter.cpp
+  src/aruco_board_detect_node.cpp
+  src/main.cpp
+)
 add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(${PROJECT_NAME}_node
   ${catkin_LIBRARIES}

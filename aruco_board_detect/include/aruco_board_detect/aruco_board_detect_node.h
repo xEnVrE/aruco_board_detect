@@ -1,117 +1,21 @@
-// ROS
+#ifndef ARUCO_BOARD_DETECT_NODE_H
+#define ARUCO_BOARD_DETECT_NODE_H
+
+/* ROS */
 #include <ros/ros.h>
 #include <tf/transform_broadcaster.h>
-#include <tf/transform_listener.h>
-#include <geometry_msgs/Pose.h>
-#include <geometry_msgs/PoseStamped.h>
-#include <cv_bridge/cv_bridge.h>
-#include <image_transport/image_transport.h>
-#include <sensor_msgs/image_encodings.h>
-#include <tf/transform_broadcaster.h>
 
-// Custom messages
-#include <aruco_board_detect/MarkerList.h>
-
-// OpenCV + ArUCO
+/* OpenCV */
 #include <opencv2/opencv.hpp>
 #include <opencv2/aruco.hpp>
 #include <opencv2/aruco/dictionary.hpp>
-#include <opencv2/highgui/highgui.hpp>
+// #include <opencv2/highgui/highgui.hpp>
 
-#include <mutex>
 #include <memory>
+#include <string>
 
-
-/**
- * @brief This class is supposed to catch all camera images
- * from a topic and store them internally.
- *
- */
-class ImageConverter
-{
-
-    image_transport::ImageTransport it_;
-    image_transport::Subscriber image_sub_;
-    image_transport::Publisher image_pub_;
-
-    cv_bridge::CvImagePtr current_img_ptr_;
-
-    std::mutex image_mutex_;
-
-    bool show_debug_window_;
-    std::string debug_window_name_;
-
-public:
-
-    /**
-     * @brief Construct a new Image Converter object
-     *
-     * @param nh ROS node handle. Necessary to subscribe to the input image topic
-     * @param show_debug_img Whether to show the received images in a CV window
-     */
-    ImageConverter(ros::NodeHandle& nh, bool show_debug_img);
-
-    ~ImageConverter();
-
-    /**
-     * @brief Get the last image stored
-     *
-     * @param cv_image The stored image will be copied to this reference
-     * @return true if an image is present
-     * @return false if no image has been stored yet
-     */
-    bool getCurrentImage(cv::Mat& cv_image);
-
-    /**
-     * @brief Callback to be executed whenever an image is published on the input topic
-     *
-     * @param msg Pointer to the image message
-     */
-    void imageAcquisitionCallback(const sensor_msgs::ImageConstPtr& msg);
-
-};
-
-/**
- * @brief Class to hold camera intrinsic parameters. Parameters will be parsed
- * from a CameraInfo message
- *
- */
-class CameraParameters
-{
-
-    cv::Mat camera_matrix_;
-    cv::Mat distortion_coeffs_;
-    cv::Size image_size_;
-
-    std::string camera_frame_id_;
-
-    bool camera_info_stored_;
-
-public:
-
-    CameraParameters();
-
-    cv::Mat getCameraMatrix();
-    cv::Mat getDistortionCoeffs();
-    cv::Size getImageSize();
-    std::string getCameraFrameId();
-
-    /**
-     * @brief Whether the camera info has already been parsed or not
-     *
-     * @return true if the info is available
-     * @return false otherwise
-     */
-    bool isCamInfoStored();
-
-    /**
-     * @brief Parse the camera parameters
-     *
-     * @param cam_info_msg ROS message containing the camera info to parse
-     */
-    void setCameraParameters(const sensor_msgs::CameraInfo& cam_info_msg);
-
-};
+#include <camera_parameters.h>
+#include <image_converter.h>
 
 
 /**
@@ -122,35 +26,19 @@ public:
  */
 class ArucoDetectNode
 {
+public:
+    ArucoDetectNode(ros::NodeHandle& nh);
 
-    ros::NodeHandle nh_;
+    ~ArucoDetectNode();
 
-    image_transport::ImageTransport it_;
+    void cameraParamsAcquisitionCallback(const sensor_msgs::CameraInfo& cam_info_msg);
 
-    std::unique_ptr<CameraParameters> cam_params_;
+    void boardDetectionTimedCallback(const ros::TimerEvent&);
 
-    std::unique_ptr<ImageConverter> img_converter_;
-
-    ros::Subscriber cam_info_sub_;
-
-    ros::Publisher board_pose_pub_;
-
-    ros::Publisher markers_data_pub_ ;
-
-    image_transport::Publisher output_image_pub_;
-
-    tf::TransformBroadcaster board_transform_bc_;
-
-    ros::Timer timer_;
-    float time_between_callbacks_;
-
-    cv::Mat input_img_;
-    cv::Mat output_img_;
-
-    std::string debug_window_name_;
-    bool show_debug_windows_;
-    bool detect_single_markers_;
-
+private:
+    /**
+     * Marker and boards description
+     */
     struct ArucoBoardDescription
     {
         int n_markers_x_;
@@ -172,16 +60,37 @@ class ArucoDetectNode
     cv::Ptr<cv::aruco::Dictionary> aruco_dict_;
     cv::Ptr<cv::aruco::GridBoard> aruco_board_;
 
+    /**
+     * ROS-related
+     */
+    ros::NodeHandle nh_;
+    ros::Subscriber cam_info_sub_;
+    ros::Publisher board_pose_pub_;
+    ros::Publisher markers_data_pub_ ;
+    ros::Timer timer_;
 
-public:
+    /**
+     * TF-related
+     */
+    tf::TransformBroadcaster board_transform_bc_;
 
-    ArucoDetectNode(ros::NodeHandle& nh);
+    /**
+     * Image handling-related
+     */
+    image_transport::ImageTransport it_;
+    image_transport::Publisher output_image_pub_;
+    std::unique_ptr<ImageConverter> img_converter_;
+    std::unique_ptr<CameraParameters> cam_params_;
+    cv::Mat input_img_;
+    cv::Mat output_img_;
 
-    ~ArucoDetectNode();
-
-    void cameraParamsAcquisitionCallback(const sensor_msgs::CameraInfo& cam_info_msg);
-
-    void boardDetectionTimedCallback(const ros::TimerEvent&);
-
+    /**
+     * Other variables
+     */
+    bool show_debug_windows_;
+    bool detect_single_markers_;
+    float time_between_callbacks_;
+    std::string debug_window_name_;
 };
 
+#endif
