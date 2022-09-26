@@ -100,14 +100,22 @@ void ArucoDetectorNode::detectionTimedCallback(const ros::TimerEvent&)
             orientation, position
         );
 
-        // Draw detected markers within the list specified by the user
+        // Process markers within the list specified by the user
         for (std::size_t i = 0; i < ids.size(); i++)
         {
+            // Draw marker detection and axes
             if (isIdWithinList(ids.at(i), description_.marker_ids))
             {
                 const std::vector<int> single_id_list{ids.at(i)};
                 const std::vector<std::vector<cv::Point2f>> single_id_inliers{inliers.at(i)};
                 cv::aruco::drawDetectedMarkers(output_img_, single_id_inliers, single_id_list);
+                cv::aruco::drawAxis
+                (
+                    output_img_,
+                    cam_params_->getCameraMatrix(), cam_params_->getDistortionCoeffs(),
+                    orientation.at(i), position.at(i),
+                    0.04
+                );
             }
         }
     }
