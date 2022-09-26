@@ -92,7 +92,7 @@ private:
     /**
      * Other variables
      */
-    bool show_debug_windows_;
+    bool show_debug_image_;
     float time_between_callbacks_;
     const std::string debug_window_name_ = "ArUco detection";
 };

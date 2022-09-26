@@ -9,8 +9,8 @@
 ArucoDetectorNode::ArucoDetectorNode(ros::NodeHandle& nh) : nh_(nh), time_between_callbacks_(0.2), it_(nh)
 {
     // Load parameters
-    nh.param<bool>("debug_img", show_debug_windows_, false);
-    nh.param<float>("detection_rate", time_between_callbacks_, 1.0);
+    nh.param<bool>("show_debug_image", show_debug_image_, false);
+    nh.param<float>("detection_period", time_between_callbacks_, 1.0);
 
     nh.param<int>("aruco_detector_markers_config/dictionary_type", description_.dict_type, cv::aruco::DICT_4X4_50);
     nh.param<float>("aruco_detector_markers_config/marker_edge_size", description_.marker_size, 0.04);
@@ -33,7 +33,7 @@ ArucoDetectorNode::ArucoDetectorNode(ros::NodeHandle& nh) : nh_(nh), time_betwee
     timer_ = nh_.createTimer(ros::Duration(time_between_callbacks_), &ArucoDetectorNode::detectionTimedCallback, this);
 
     // Setup the debugging OpenCV window if required
-    if (show_debug_windows_)
+    if (show_debug_image_)
         cv::namedWindow(debug_window_name_);
 }
 
@@ -41,7 +41,7 @@ ArucoDetectorNode::ArucoDetectorNode(ros::NodeHandle& nh) : nh_(nh), time_betwee
 ArucoDetectorNode::~ArucoDetectorNode()
 {
     // If the debugging window was active, kill the window
-    if (show_debug_windows_)
+    if (show_debug_image_)
         cv::destroyWindow(debug_window_name_);
 }
 
@@ -118,7 +118,7 @@ void ArucoDetectorNode::detectionTimedCallback(const ros::TimerEvent&)
     output_image_pub_.publish(image_msg);
 
     // Show the output image
-    if (show_debug_windows_)
+    if (show_debug_image_)
     {
         cv::imshow(debug_window_name_, output_img_);
         cv::waitKey(3);

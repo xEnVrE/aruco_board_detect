@@ -3,15 +3,15 @@
     <arg name="camera_info_topic"   default="/camera/color/camera_info" />
     <arg name="camera_image_topic"  default="/camera/color/image_raw" />
     <arg name="markers_config_file" default="$(find aruco_detector)/cfg/markers_config.yaml" />
-    <arg name="detection_rate"      default="0.03" />
-    <arg name="show_debug_img"      default="false" />
+    <arg name="detection_period"    default="0.03" />
+    <arg name="show_debug_image"    default="false" />
 
     <remap from="$(arg node_name)/input/camera_info" to="$(arg camera_info_topic)" />
     <remap from="$(arg node_name)/input/image_raw" to="$(arg camera_image_topic)" />
 
     <node name="aruco_detector" pkg="aruco_detector" type="aruco_detector_node" output="screen">
         <rosparam file="$(arg markers_config_file)" ns="aruco_detector_markers_config"/>
-        <param name="detection_rate"        value="$(arg detection_rate)" />
-        <param name="debug_img"             value="$(arg show_debug_img)" />
+        <param name="detection_period" value="$(arg detection_period)" />
+        <param name="show_debug_image" value="$(arg show_debug_image)" />
     </node>
 </launch>
