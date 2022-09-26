@@ -15,7 +15,7 @@ ROS package to detect aruco markers in images and estimate their pose.
 1. Clone within a working ROS workspace $WS
   ```console
   cd $WS/src
-  git clone https://github.com/xenvre/aruco_board_detect
+  git clone https://github.com/xenvre/aruco_detector
   ```
 2. Build
   ```console
@@ -38,9 +38,7 @@ Some `roslaunch` parameters you might find useful:
 | `camera_info_topic`               | The node will subscribe to this topic to source camera parameters |
 | `camera_image_topic`              | The node will subscribe to this topic to source input images |
 | `show_debug_img`                  | Shows the output image in a window |
-| `publish_single_markers`          | Enable single marker detection |
 | `detection_rate`                  | Time (second) between marker detections |
-| `board_config_file`               | Config file for the marker board |
 | `single_markers_config_file`      | Config file for the single markers |
 
 You can change the configuration of the marker board being sought in the `cfg/board_config.yaml` file. Same goes for individual markers.
@@ -53,7 +51,7 @@ The node will broadcast a tf frame named `aruco_board` (the board reference fram
 
 | Topic | Explanation |
 | - | - |
-| `/aruco_board_detector/board_pose` | The marker board pose (stamped with the camera reference frame) |
+| `/aruco_board_detector/marker_pose` | The marker board pose (stamped with the camera reference frame) |
 | `/aruco_board_detector/debug_image` | The output image, i.e. the input image with markers drawn on it |
 | `/aruco_board_detector/marker_data` | Stamped 6D pose of every single marker detected, with ID |
 
