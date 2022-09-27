@@ -1,13 +1,14 @@
 # aruco_detector
 
-ROS package to detect aruco markers in images and estimate their pose.
+ROS package to detect ArUco markers in images and estimate their pose.
 
 ## Prerequisites
 
 - `OpenCV`
+- `Eigen3`
   > e.g., in Ubuntu
   >```console
-  >sudo apt install libopencv-dev
+  >sudo apt install libopencv-dev libeigen3-dev
   >```
 
 ## Installation
@@ -28,39 +29,30 @@ ROS package to detect aruco markers in images and estimate their pose.
 Once a camera is plugged in your rig and its node is running, simply use the `roslaunch` file provided:
 
 ```console
-roslaunch aruco_board_detect aruco_board_detect.launch publish_single_markers:=true show_debug_img:=true
+roslaunch aruco_board_detect aruco_board_detect.launch [show_debug_img:=true]
 ```
 
 Some `roslaunch` parameters you might find useful:
 
-| Parameter | Effect |
+| Parameter | Description |
 | --- | --- |
 | `camera_info_topic`               | The node will subscribe to this topic to source camera parameters |
 | `camera_image_topic`              | The node will subscribe to this topic to source input images |
-| `show_debug_img`                  | Shows the output image in a window |
-| `detection_rate`                  | Time (second) between marker detections |
-| `single_markers_config_file`      | Config file for the single markers |
+| `show_debug_image`                | Shows the output image in a OpenCV window |
+| `detection_period`                | Time between marker detections (seconds)|
+| `markers_config_file`             | Config file for marker settings |
 
-You can change the configuration of the marker board being sought in the `cfg/board_config.yaml` file. Same goes for individual markers.
+Please check the launch file for defaults. Specifically, the file `cfg/markers_config.yaml` is used as default configuration file.
 
-## Inputs/outputs
-
-The node will broadcast a tf frame named `aruco_board` (the board reference frame) and one named `graspa_board` (the same frame, shifted on the bottom right of the board).
-
-### Published topics
+## Published topics
 
 | Topic | Explanation |
 | - | - |
-| `/aruco_board_detector/marker_pose` | The marker board pose (stamped with the camera reference frame) |
+| `/aruco_board_detector/marker_pose` | The marker poses (stamped with the camera reference frame) |
 | `/aruco_board_detector/debug_image` | The output image, i.e. the input image with markers drawn on it |
-| `/aruco_board_detector/marker_data` | Stamped 6D pose of every single marker detected, with ID |
 
-### Subscribed topics
+The node will also broadcast several tf fraames named `marker_<id>` where `<id>` is the ID of the marker.
 
-| Topic | Explanation |
-| - | - |
-| `camera_info_topic` | Camera parameters topic |
-| `camera_image_topic` | Camera image topic |
 
 ## Marker generator
 
