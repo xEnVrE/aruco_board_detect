@@ -1,6 +1,0 @@
-number_markers_x : 7
-number_markers_y : 5
-marker_edge_size : 0.057
-marker_stride : 0.02
-# cv::aruco::DICT_4X4_50 is 0
-dictionary_type : 0
