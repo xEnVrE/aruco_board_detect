@@ -29,7 +29,8 @@ bool ImageConverter::getCurrentImage(cv::Mat& cv_image)
     }
     else
     {
-        cv_image = current_img_ptr_->image;
+        current_img_ptr_->image.copyTo(cv_image);
+        current_img_ptr_ = nullptr;
         image_mutex_.unlock();
         return true;
     }
