@@ -10,19 +10,11 @@ ImageConverter::ImageConverter(ros::NodeHandle& nh) : it_(nh)
     // Subscribe to the camera image topic
 
     image_sub_ = it_.subscribe("input/image_raw", 1, &ImageConverter::imageAcquisitionCallback, this);
-
-    // debug_window_name_ = "Input camera image";
-
-    // if (show_debug_window_)
-    //     cv::namedWindow(debug_window_name_);
 }
 
 
 ImageConverter::~ImageConverter()
-{
-    // if (show_debug_window_)
-    //     cv::destroyWindow(debug_window_name_);
-}
+{}
 
 
 bool ImageConverter::getCurrentImage(cv::Mat& cv_image)
@@ -61,12 +53,6 @@ void ImageConverter::imageAcquisitionCallback(const sensor_msgs::ImageConstPtr& 
     }
 
     image_mutex_.unlock();
-
-    // if (show_debug_window_)
-    // {
-    //     cv::imshow(debug_window_name_, current_img_ptr_->image);
-    //     cv::waitKey(3);
-    // }
 
     return;
 }

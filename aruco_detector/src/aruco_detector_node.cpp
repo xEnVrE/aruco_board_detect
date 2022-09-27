@@ -33,9 +33,7 @@ ArucoDetectorNode::ArucoDetectorNode(ros::NodeHandle& nh) : nh_(nh), time_betwee
     output_image_pub_ = it_.advertise("debug_image", 1);
 
     // Publish output poses
-    // std::vector<ros::Publisher> pose_pubs_;
-    for (const int& marker_id : description_.marker_ids)
-        pose_pubs_[marker_id] =  nh_.advertise<geometry_msgs::PoseStamped>("marker_" + std::to_string(marker_id) + "_pose", 1);
+    pose_pub_ = nh_.advertise<aruco_detector::MarkerList>("marker_pose", 1);
 
     // Setup the detection callback
     timer_ = nh_.createTimer(ros::Duration(time_between_callbacks_), &ArucoDetectorNode::detectionTimedCallback, this);
@@ -91,6 +89,12 @@ void ArucoDetectorNode::detectionTimedCallback(const ros::TimerEvent&)
     // Prepare an image for output
     input_img_.copyTo(output_img_);
 
+    // Prepare marker list message for output
+    aruco_detector::MarkerListPtr marker_list_msg = std::make_unique<aruco_detector::MarkerList>();
+    marker_list_msg->header.frame_id = cam_params_->getCameraFrameId();
+    marker_list_msg->header.stamp = ros::Time::now();
+    marker_list_msg->marker_dictionary.data = description_.dict_type;
+
     // Perform markers detection
     std::vector<int> ids;
     std::vector<std::vector<cv::Point2f>> inliers;
@@ -126,6 +130,11 @@ void ArucoDetectorNode::detectionTimedCallback(const ros::TimerEvent&)
                 );
             }
 
+            // Compose the marker id
+            std_msgs::Int16 marker_id;
+            marker_id.data = ids.at(i);
+            marker_list_msg->marker_ids.push_back(marker_id);
+
             // Convert rotation vector to a quaternion
             Eigen::Matrix3d rotation_matrix_eig;
             cv::Mat rotation_matrix;
@@ -133,7 +142,7 @@ void ArucoDetectorNode::detectionTimedCallback(const ros::TimerEvent&)
             cv::cv2eigen(rotation_matrix, rotation_matrix_eig);
             Eigen::Quaterniond quaternion(rotation_matrix_eig);
 
-            // Publish the estimated pose
+            // Compose the estimated pose
             geometry_msgs::PoseStamped marker_pose;
             marker_pose.header.stamp = ros::Time::now();
             marker_pose.header.frame_id = cam_params_->getCameraFrameId();
@@ -145,8 +154,10 @@ void ArucoDetectorNode::detectionTimedCallback(const ros::TimerEvent&)
             marker_pose.pose.orientation.z = quaternion.z();
             marker_pose.pose.orientation.w = quaternion.w();
 
-            pose_pubs_.at(ids.at(i)).publish(marker_pose);
+            marker_list_msg->marker_poses.push_back(marker_pose);
         }
+
+        pose_pub_.publish(marker_list_msg);
     }
 
     // Send the output image

@@ -10,7 +10,6 @@
 
 #include <memory>
 #include <string>
-#include <unordered_map>
 
 #include <camera_parameters.h>
 #include <image_converter.h>
@@ -54,7 +53,7 @@ private:
      */
     ros::NodeHandle nh_;
     ros::Subscriber cam_info_sub_;
-    std::unordered_map<int, ros::Publisher> pose_pubs_;
+    ros::Publisher pose_pub_;
     ros::Timer timer_;
 
     /**
