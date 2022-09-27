@@ -157,6 +157,7 @@ void ArucoDetectorNode::detectionTimedCallback(const ros::TimerEvent&)
             marker_list_msg->marker_poses.push_back(marker_pose);
         }
 
+        // Publish all the marker poses
         pose_pub_.publish(marker_list_msg);
     }
 
