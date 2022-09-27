@@ -51,7 +51,7 @@ Please check the launch file for defaults. Specifically, the file `cfg/markers_c
 | `/aruco_board_detector/marker_pose` | The marker poses (stamped with the camera reference frame) |
 | `/aruco_board_detector/debug_image` | The output image, i.e. the input image with markers drawn on it |
 
-The node will also broadcast several tf fraames named `marker_<id>` where `<id>` is the ID of the marker.
+The node will also broadcast several tf frames named `marker_<id>` where `<id>` is the ID of the marker.
 
 
 ## Marker generator
