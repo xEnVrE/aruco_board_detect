@@ -29,7 +29,7 @@ ROS package to detect ArUco markers in images and estimate their pose.
 Once a camera is plugged in your rig and its node is running, simply use the `roslaunch` file provided:
 
 ```console
-roslaunch aruco_board_detect aruco_board_detect.launch [show_debug_img:=true]
+roslaunch aruco_board_detect aruco_board_detect.launch [show_debug_image:=true]
 ```
 
 Some `roslaunch` parameters you might find useful:
