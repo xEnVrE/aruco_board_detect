@@ -158,6 +158,14 @@ void ArucoDetectorNode::detectionTimedCallback(const ros::TimerEvent&)
             // Append id and pose within the list message
             marker_list_msg->marker_ids.push_back(marker_id);
             marker_list_msg->marker_poses.push_back(marker_pose);
+
+            // Broadcast the associated TF transform
+            tf::Transform tf_transform;
+            tf::Quaternion quaternion_tf(quaternion.x(), quaternion.y(), quaternion.z(), quaternion.w());
+            tf_transform.setRotation(quaternion_tf);
+            tf_transform.setOrigin(tf::Vector3(position.at(i)[0], position.at(i)[1], position.at(i)[2]));
+            tf::StampedTransform stamped_transform(tf_transform, now, cam_params_->getCameraFrameId(), "marker_" + std::to_string(ids.at(i)));
+            tf_transform_bc_.sendTransform(stamped_transform);
         }
 
         // Publish all the marker poses

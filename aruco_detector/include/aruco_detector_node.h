@@ -59,7 +59,7 @@ private:
     /**
      * TF-related
      */
-    // tf::TransformBroadcaster board_transform_bc_;
+    tf::TransformBroadcaster tf_transform_bc_;
 
     /**
      * Image handling-related
