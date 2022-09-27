@@ -81,10 +81,7 @@ void ArucoDetectorNode::detectionTimedCallback(const ros::TimerEvent&)
 
     // Camera images not yet received
     if (!img_converter_->getCurrentImage(input_img_))
-    {
-        ROS_INFO_STREAM("No image has been acquired yet");
         return;
-    }
 
     const auto& now = ros::Time::now();
 
