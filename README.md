@@ -59,12 +59,12 @@ The node will also broadcast several tf frames named `marker_<id>` where `<id>` 
 The following command shows how to generate an ArUco marker. In the example, we consider a 4.0 x 4.0 cm (`-s 4.0`) marker with ID = 0 (`-i 0`) from the dictonary `DICT_5X5_50` (`-t DICT_5X5_50`).
 
 ```console
-python `rospack find aruco_board_detect`/scripts/generate_aruco.py -o marker.png -s 4.0 -i 0 -t DICT_5X5_50
+python `rospack find aruco_detector`/scripts/generate_aruco.py -o marker.png -s 4.0 -i 0 -t DICT_5X5_50
 
 ```
 
 For futher options, run the above command with `--help`:
 
 ```console
-python `rospack find aruco_board_detect`/scripts/generate_aruco.py --help
+python `rospack find aruco_detector`/scripts/generate_aruco.py --help
 ```
